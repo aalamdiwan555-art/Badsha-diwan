@@ -1,0 +1,1 @@
+- [GitHub secret protection](github-secret-protection.md) — rejected secret-bearing commits must be removed from reachable history before pushing again.
