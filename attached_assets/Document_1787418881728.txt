@@ -377,6 +377,18 @@ DETAILS:
   - Supabase schema added without credentials or service-role keys
   - Supabase connection was not authorized, so online integration remains pending
 
+--- CHECKPOINT 25: Supabase Client Layer Added ---
+DATE: 2026-08-22
+WHAT: Added the Android client-side Supabase REST integration
+WHY: Autopilot needs a secure path for sign-in and remote scenario modes
+WHERE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/data/remote
+DETAILS:
+  - Added public project URL and publishable key configuration
+  - Added email/password sign-in request support
+  - Added active scenario mode fetching with the user's access token
+  - Kept the Supabase secret/service key out of Android code
+  - Admin mutations remain server-side work pending a managed backend connection
+
 ================================================================================
 KEY CONTACT & REFERENCES
 ================================================================================
