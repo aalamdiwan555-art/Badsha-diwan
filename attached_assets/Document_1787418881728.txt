@@ -1,0 +1,391 @@
+# 📋 AUTOPILOT — PROJECT DOCUMENTATION & CHANGE LOG
+# App: Autopilot | Package: com.autopilot.driver
+# Admin: aalamdiwan555@gmail.com
+# Platform: Android Native App (NOT Website)
+
+================================================================================
+DOCUMENT PURPOSE
+================================================================================
+This document tracks EVERY update made to the project — what was changed, 
+why it was changed, and where in the codebase it applies. Update this file 
+after every checkpoint, commit, or feature addition.
+
+================================================================================
+CHECKPOINT HISTORY
+================================================================================
+
+--- CHECKPOINT 1: Initial Project Concept ---
+DATE: 2026-08-22
+WHAT: Defined the core idea of an Android AutoClicker app with admin control
+WHY: User requested a fork of Smart-AutoClicker with remote scenario management
+WHERE: Project scope, architecture decisions
+DETAILS:
+  - Fork from https://github.com/Nain57/Smart-AutoClicker.git
+  - Dual-role system: Admin controls everything, User only sees Start/Stop
+  - Supabase as backend for auth, database, realtime sync
+  - Unity Ads for monetization
+
+--- CHECKPOINT 2: Supabase Configuration Locked ---
+DATE: 2026-08-22
+WHAT: Fixed Supabase credentials and security rules
+WHY: Backend needs consistent, secure configuration
+WHERE: Constants.kt, Edge Functions, Environment variables
+DETAILS:
+  - SUPABASE_URL: https://rhwpbnzbevufolojjimh.supabase.co
+  - SUPABASE_PUBLISHABLE_KEY: sb_publishable_djOPp-ptG00MCdzNxXxL7A_Hq27r9BN
+   - SUPABASE_SECRET_KEY: [REDACTED — store only in secure server-side secrets]
+  - SUPABASE_JWKS_URL: https://rhwpbnzbevufolojjimh.supabase.co/auth/v1/.well-known/jwks.json
+  - RULE: SECRET_KEY never goes into Android client code — Edge Functions only
+
+--- CHECKPOINT 3: Unity Ads Configuration Locked ---
+DATE: 2026-08-22
+WHAT: Fixed Unity Ads Game IDs and ad unit strategy
+WHY: Monetization requires exact IDs and aggressive placement
+WHERE: UnityAdsManager.kt, AndroidManifest.xml, build.gradle
+DETAILS:
+  - Android Game ID: 6178983
+  - iOS Game ID: 6178982
+  - Organization ID: 13469908655812
+  - 4 ad types: Floating Banner, In-App Banner, Interstitial, Rewarded
+  - Interstitial frequency: Every 2 minutes, max 1 per 90 seconds
+  - Rewarded: 20 ads = 1 day subscription
+
+--- CHECKPOINT 4: Database Schema Designed ---
+DATE: 2026-08-22
+WHAT: Created complete Supabase database schema
+WHY: All app data needs structured storage with security
+WHERE: Supabase SQL Editor, Edge Functions, Room entities
+DETAILS:
+  - profiles: user data, subscription status, ad-free flag, scenario selection
+  - scenarios: admin-created clicker scenarios with JSON data
+  - user_scenarios: junction table for user-scenario assignments
+  - subscriptions: tracks how users got their subscription (ads or admin)
+  - ad_events: logs every ad interaction for revenue tracking
+  - click_sessions: tracks auto-clicker usage analytics
+  - app_settings: global configurable settings
+  - admin_logs: audit trail of all admin actions
+  - RLS policies protect every table
+
+--- CHECKPOINT 5: Admin Role & Permissions Defined ---
+DATE: 2026-08-22
+WHAT: Defined full admin capabilities and user restrictions
+WHY: Admin needs complete control, user needs minimal access
+WHERE: Admin Dashboard screens, Edge Functions, RLS policies
+DETAILS:
+  - Admin email: aalamdiwan555@gmail.com (hardcoded super-admin)
+  - Admin can: CRUD scenarios, grant subscriptions, toggle ad-free, ban users
+  - User can: Start/Stop, watch ads, select mode, view profile
+  - Admin actions logged in admin_logs table for audit
+
+--- CHECKPOINT 6: 100% Free Model Enforced ---
+DATE: 2026-08-22
+WHAT: Removed all paid subscription options, made app completely free
+WHY: User explicitly requested NO premium — only ads and admin grants
+WHERE: Subscription screen, Billing module (REMOVED), UI strings
+DETAILS:
+  - REMOVED: Google Play Billing dependencies
+  - REMOVED: Stripe integration
+  - REMOVED: All "Upgrade to Premium" buttons and screens
+  - REMOVED: Monthly/yearly/lifetime paid plans
+  - KEPT: Reward ads (20 = 1 day) as only user-earned method
+  - KEPT: Admin manual grant as secondary method
+  - All UI now says "100% FREE" and "No payments ever required"
+
+--- CHECKPOINT 7: Hard Ad System Designed ---
+DATE: 2026-08-22
+WHAT: Created aggressive ad placement strategy
+WHY: Since app is free, ads must generate revenue aggressively
+WHERE: Ads module, Home screen, FloatingWindowService
+DETAILS:
+  - Floating Banner: Bottom-right overlay, always on during clicks, non-closable
+  - In-App Banner: Bottom of every screen, non-closable
+  - Interstitial: Every 2 min + app open + screen switch + stop clicker
+  - Rewarded: Prominent card on home, 20 ads = 1 day, progress bar
+  - All ads hidden if is_ad_free = true
+  - Ad events logged to Supabase for revenue analytics
+
+--- CHECKPOINT 8: Ad-Free System Added ---
+DATE: 2026-08-22
+WHAT: Added ability for admin to make any user completely ad-free
+WHY: User requested admin can give users zero-ad experience
+WHERE: profiles table, Admin Dashboard, Ads module
+DETAILS:
+  - Added is_ad_free boolean to profiles table
+  - Admin Dashboard has "Make Ad-Free" / "Remove Ad-Free" buttons per user
+  - Before loading ANY ad, app checks is_ad_free flag
+  - If true: Skip ad initialization, hide ad containers, zero ad experience
+  - Real-time sync: changes reflect instantly on user device
+  - Push notification sent to user when status changes
+
+--- CHECKPOINT 9: Subscription Grant System Added ---
+DATE: 2026-08-22
+WHAT: Added admin ability to manually grant subscription durations
+WHY: User requested admin can give users 1 day, 2 days, lifetime, etc.
+WHERE: Admin Dashboard, subscriptions table, profiles table
+DETAILS:
+  - Durations: 1d, 2d, 3d, 7d, 15d, 30d, 90d, 365d, Lifetime
+  - Lifetime = expires_at = 2099-12-31, duration_days = 99999
+  - Admin selects user → picks duration → confirms
+  - Updates profiles.subscription_expires_at
+  - Inserts record into subscriptions table (plan_type='admin_granted')
+  - Logs action in admin_logs
+  - Sends push notification to user
+  - Fireworks animation on user device for lifetime grants
+
+--- CHECKPOINT 10: Scenario Selector (Mode System) Added ---
+DATE: 2026-08-22
+WHAT: Added scenario name as "Mode" selector — user picks from dropdown
+WHY: User requested admin uploads 15 scenarios, user selects like language
+WHERE: profiles table, Home screen, Select Mode screen, Admin Creator
+DETAILS:
+  - Added selected_scenario_id and selected_scenario_name to profiles
+  - Admin creates scenario → name becomes option in user dropdown
+  - User sees "Select Your Mode" on first login
+  - Home screen shows "Mode: [Name] ▼" dropdown to switch anytime
+  - Max 15 scenarios enforced in admin UI
+  - Real-time sync when admin adds/edits/deletes scenarios
+  - Offline caching of scenario list
+
+--- CHECKPOINT 11: App Identity Finalized ---
+DATE: 2026-08-22
+WHAT: Locked app name and package name
+WHY: User specified exact branding requirements
+WHERE: AndroidManifest.xml, build.gradle, all string resources, splash screen
+DETAILS:
+  - App Name: Autopilot (replaced all "Smart AutoClicker" references)
+  - Package Name: com.autopilot.driver
+  - Splash screen: Steering wheel Lottie animation
+  - Theme: Dark cyberpunk with cyan (#00F0FF) and purple (#B829F7) neon
+
+--- CHECKPOINT 12: UI/UX Design System Created ---
+DATE: 2026-08-22
+WHAT: Designed complete animated UI with all screens
+WHY: App needs polished, enchanted user experience
+WHERE: presentation/common/theme, presentation/user, presentation/admin
+DETAILS:
+  - Lottie animations on every transition
+  - Pulse glow on Start/Stop buttons
+  - Floating particles on auth screens
+  - Shimmer skeletons for loading
+  - Confetti on reward completion
+  - Fireworks on lifetime grant
+  - All screens designed with ASCII wireframes in prompt
+
+--- CHECKPOINT 13: Real-Time Sync Configured ---
+DATE: 2026-08-22
+WHAT: Set up Supabase Realtime for instant data propagation
+WHY: Admin changes must reach users within seconds
+WHERE: Supabase Dashboard, Kotlin Realtime client, ViewModels
+DETAILS:
+  - Realtime enabled on: scenarios, user_scenarios, profiles, app_settings
+  - Admin publishes scenario → User receives within 3 seconds
+  - Admin grants subscription → User receives push + UI update instantly
+  - Admin toggles ad-free → Ads hide/show immediately
+
+--- CHECKPOINT 14: Security & Anti-Cheat Implemented ---
+DATE: 2026-08-22
+WHAT: Added security layers and fraud prevention
+WHY: Prevent users from faking subscriptions or farming ads
+WHERE: Edge Functions, RLS policies, SecurityUtils.kt
+DETAILS:
+  - Reward ad completion verified server-side before granting
+  - Max 20 reward ads per day with device fingerprinting
+  - Click session anomaly detection
+  - Ban system for suspicious users
+  - Local data modifications overwritten by server sync
+  - JWT verification via JWKS URL
+
+--- CHECKPOINT 15: Notification System Added ---
+DATE: 2026-08-22
+WHAT: Integrated Firebase Cloud Messaging for push notifications
+WHY: Users need alerts for subscription expiry, new scenarios, admin actions
+WHERE: Firebase Console, Supabase Edge Functions, FCM service
+DETAILS:
+  - New scenario → "New mode available!"
+  - Subscription expiring → "Expires in 24h — watch ads!"
+  - Admin grant → "🎉 Admin granted you X days!"
+  - Ad-free toggle → "✨ You are now ad-free!"
+  - Daily reset → "Your 20 free ads are ready!"
+
+--- CHECKPOINT 16: Analytics & Reports Designed ---
+DATE: 2026-08-22
+WHAT: Created admin analytics dashboard specifications
+WHY: Admin needs visibility into users, revenue, and app performance
+WHERE: Admin Dashboard, Supabase queries, Charts
+DETAILS:
+  - User stats: total, active, subscription breakdown, ad-free count
+  - Revenue: impressions, CTR, eCPM, fill rate, lost revenue from ad-free
+  - Admin logs: filterable, searchable, exportable to CSV
+  - Device stats: Android version, models, countries
+
+--- CHECKPOINT 17: Project Structure Finalized ---
+DATE: 2026-08-22
+WHAT: Defined complete folder structure and file names
+WHY: Clean architecture requires organized code structure
+WHERE: Entire app/ directory tree
+DETAILS:
+  - data/ (local, remote, repository, model)
+  - domain/ (model, repository, usecase)
+  - presentation/ (common, auth, user, admin, viewmodel)
+  - service/ (AutopilotService, FloatingWindowService, OverlayManager)
+  - ads/ (UnityAdsManager, BannerAdManager, InterstitialManager, RewardedAdManager)
+  - di/ (Hilt modules)
+  - util/ (SecurityUtils, Constants, Extensions)
+
+--- CHECKPOINT 18: Build Requirements Documented ---
+DATE: 2026-08-22
+WHAT: Listed all Gradle dependencies and Android permissions
+WHY: Developer needs exact dependencies to build the app
+WHERE: build.gradle.kts, AndroidManifest.xml
+DETAILS:
+  - Supabase Kotlin SDK (postgrest, auth, realtime, storage)
+  - Jetpack Compose BOM
+  - Hilt + Hilt Navigation Compose
+  - Room + Room KTX
+  - Unity Ads SDK 4.x
+  - Lottie Compose
+  - Coil Compose
+  - Ktor Client Android
+  - DataStore Preferences
+  - Firebase BOM + Messaging
+  - Permissions: INTERNET, SYSTEM_ALERT_WINDOW, FOREGROUND_SERVICE, POST_NOTIFICATIONS
+
+--- CHECKPOINT 19: Testing Strategy Defined ---
+DATE: 2026-08-22
+WHAT: Created testing plan for all app layers
+WHY: Quality assurance requires structured testing
+WHERE: test/ and androidTest/ directories
+DETAILS:
+  - Unit tests: ViewModels, UseCases, Repositories (MockK + JUnit)
+  - UI tests: Compose critical flows (Espresso/Compose Test)
+  - Integration: Supabase, Ads, Realtime
+  - Accessibility: Click injection verification
+  - Admin: Grant subscription and ad-free toggle verification
+
+--- CHECKPOINT 20: Implementation Phases Planned ---
+DATE: 2026-08-22
+WHAT: Created 6-phase implementation roadmap
+WHY: Complex app needs structured development approach
+WHERE: Project management, Git milestones
+DETAILS:
+  Phase 1: Foundation (fork, setup, auth, theme)
+  Phase 2: Core AutoClicker (accessibility, execution, overlay)
+  Phase 3: Admin System (dashboard, creator, user management)
+  Phase 4: Scenario Selector (mode system, dropdown, sync)
+  Phase 5: Hard Ad System (Unity Ads, banners, interstitial, rewarded)
+  Phase 6: Polish (animations, notifications, offline, security, beta)
+
+--- CHECKPOINT 21: Critical Rules Documented ---
+DATE: 2026-08-22
+WHAT: Listed 20 non-negotiable rules
+WHY: Prevent critical mistakes during development
+WHERE: Top of prompt, code reviews, CI/CD gates
+DETAILS:
+  1. Android app only — NOT website
+  2. Secret key never in client
+  3. Admin email hardcoded
+  4. Unity IDs fixed
+  5. User cannot modify scenarios
+  6. Interstitial cap: 1 per 90 sec
+  7. Honest accessibility declaration
+  8. All ad events logged
+  9. Subscription check every launch + 5 min
+  10. Real-time sync within 3 sec
+  11. Server-side reward verification
+  12. No paid subscriptions
+  13. Admin can make ad-free instantly
+  14. Admin can grant any duration
+  15. Ad-free = completely skip ads
+  16. Lifetime = expires 2099-12-31
+  17. App name = Autopilot
+  18. Package = com.autopilot.driver
+  19. Max 15 scenarios
+  20. Scenario name = Mode selector
+
+--- CHECKPOINT 22: Final Prompt Merged ---
+DATE: 2026-08-22
+WHAT: Combined full prompt + short prompt into single master document
+WHY: Single source of truth for the entire project
+WHERE: full_prompt.txt
+DETAILS:
+  - Merged all sections from previous prompts
+  - Added explicit "NOT WEBSITE" declarations at top
+  - Included all latest features: mode selector, ad-free, admin grants
+  - 21 sections covering every aspect of the app
+  - 35,936 characters comprehensive specification
+
+--- CHECKPOINT 23: Document.txt Created ---
+DATE: 2026-08-22
+WHAT: Created this tracking document
+WHY: User requested documentation of every mini update
+WHERE: Document.txt
+DETAILS:
+  - Tracks all 22+ checkpoints
+  - Each entry has: DATE, WHAT, WHY, WHERE, DETAILS
+  - Designed to be appended after every future checkpoint
+  - Serves as project changelog and decision log
+
+================================================================================
+HOW TO UPDATE THIS DOCUMENT
+================================================================================
+
+After every checkpoint, commit, or feature addition, append a new entry:
+
+--- CHECKPOINT [NUMBER]: [Brief Title] ---
+DATE: [YYYY-MM-DD]
+WHAT: [What was changed/added]
+WHY: [Reason for the change]
+WHERE: [Files/modules affected]
+DETAILS:
+  - [Bullet point detail]
+  - [Bullet point detail]
+
+================================================================================
+PENDING / FUTURE CHECKPOINTS (To Be Completed During Development)
+================================================================================
+
+[ ] CHECKPOINT 24: Supabase Project Setup — Create tables, RLS, Edge Functions
+[ ] CHECKPOINT 25: Android Project Initialization — Fork repo, setup Compose
+[ ] CHECKPOINT 26: Authentication Implementation — Login, Register, OTP
+[ ] CHECKPOINT 27: Accessibility Service Port — Fork Smart-AutoClicker service
+[ ] CHECKPOINT 28: Scenario Execution Engine — Parse and run scenario JSON
+[ ] CHECKPOINT 29: Admin Dashboard UI — Build all admin screens
+[ ] CHECKPOINT 30: Scenario Builder — Visual editor for admin
+[ ] CHECKPOINT 31: User Home Screen — Start/Stop, mode dropdown
+[ ] CHECKPOINT 32: Select Mode Screen — First-login scenario picker
+[ ] CHECKPOINT 33: Unity Ads Integration — All 4 ad types
+[ ] CHECKPOINT 34: Subscription Logic — Trial, ads, admin grants
+[ ] CHECKPOINT 35: Ad-Free System — Toggle and real-time sync
+[ ] CHECKPOINT 36: Push Notifications — FCM integration
+[ ] CHECKPOINT 37: Offline Support — Room caching, sync queue
+[ ] CHECKPOINT 38: Analytics Dashboard — Admin reports and charts
+[ ] CHECKPOINT 39: Security Audit — Anti-cheat, RLS verification
+[ ] CHECKPOINT 40: Beta Testing — Internal testing, bug fixes
+[ ] CHECKPOINT 41: Play Store Preparation — Screenshots, description, privacy policy
+[ ] CHECKPOINT 42: Release v1.0 — Production deployment
+
+--- CHECKPOINT 24: Android Foundation Imported ---
+DATE: 2026-08-22
+WHAT: Imported the Smart-AutoClicker Android foundation and adapted the product identity
+WHY: The project must be a native Android application with the existing accessibility click engine preserved
+WHERE: android-app module, Android manifest, app resources, Supabase schema
+DETAILS:
+  - App label changed to Autopilot
+  - Application ID configured as com.autopilot.driver
+  - INTERNET and POST_NOTIFICATIONS permissions added
+  - Accessibility service description updated for Autopilot
+  - Supabase schema added without credentials or service-role keys
+  - Supabase connection was not authorized, so online integration remains pending
+
+================================================================================
+KEY CONTACT & REFERENCES
+================================================================================
+
+Admin Email: aalamdiwan555@gmail.com
+Source Repo: https://github.com/Nain57/Smart-AutoClicker.git
+Supabase URL: https://rhwpbnzbevufolojjimh.supabase.co
+Unity Ads: Android=6178983, iOS=6178982, Org=13469908655812
+
+================================================================================
+END OF DOCUMENT
+================================================================================
