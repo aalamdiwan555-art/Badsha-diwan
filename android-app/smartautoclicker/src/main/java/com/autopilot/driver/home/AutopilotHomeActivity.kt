@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -102,6 +103,7 @@ class AutopilotHomeActivity : ComponentActivity() {
     }
 
     private fun loadProfile() {
+        hasLoadedProfile = false
         statusText.setText(R.string.home_loading)
         lifecycleScope.launch {
             runCatching { accountRepository.loadSavedAccount() }
@@ -123,6 +125,13 @@ class AutopilotHomeActivity : ComponentActivity() {
                             } else {
                                 getString(R.string.home_free_access)
                             }
+                            val adVisibility = if (result.profile.isAdFree) {
+                                View.GONE
+                            } else {
+                                View.VISIBLE
+                            }
+                            rewardProgress.visibility = adVisibility
+                            rewardButton.visibility = adVisibility
                             rewardProgress.text = getString(
                                 R.string.home_reward_progress,
                                 result.profile.adsWatchedToday,
