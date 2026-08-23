@@ -201,42 +201,55 @@ alter table public.click_sessions enable row level security;
 alter table public.app_settings enable row level security;
 alter table public.admin_logs enable row level security;
 
+drop policy if exists "profiles_self_read" on public.profiles;
 create policy "profiles_self_read" on public.profiles
   for select using (id = auth.uid() or public.is_admin());
 drop policy if exists "profiles_self_update" on public.profiles;
 
+drop policy if exists "scenarios_visible_to_users" on public.scenarios;
 create policy "scenarios_visible_to_users" on public.scenarios
   for select using (
     public.is_admin()
     or (is_active and (is_global or auth.uid() = any(target_users)))
   );
+drop policy if exists "scenarios_admin_write" on public.scenarios;
 create policy "scenarios_admin_write" on public.scenarios
   for all using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "user_scenarios_self_read" on public.user_scenarios;
 create policy "user_scenarios_self_read" on public.user_scenarios
   for select using (user_id = auth.uid() or public.is_admin());
+drop policy if exists "user_scenarios_admin_write" on public.user_scenarios;
 create policy "user_scenarios_admin_write" on public.user_scenarios
   for all using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "subscriptions_self_read" on public.subscriptions;
 create policy "subscriptions_self_read" on public.subscriptions
   for select using (user_id = auth.uid() or public.is_admin());
+drop policy if exists "subscriptions_admin_write" on public.subscriptions;
 create policy "subscriptions_admin_write" on public.subscriptions
   for all using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "ad_events_self_insert" on public.ad_events;
 create policy "ad_events_self_insert" on public.ad_events
   for insert with check (user_id = auth.uid());
+drop policy if exists "ad_events_admin_read" on public.ad_events;
 create policy "ad_events_admin_read" on public.ad_events
   for select using (public.is_admin());
 
+drop policy if exists "click_sessions_self_access" on public.click_sessions;
 create policy "click_sessions_self_access" on public.click_sessions
   for all using (user_id = auth.uid() or public.is_admin())
   with check (user_id = auth.uid() or public.is_admin());
 
+drop policy if exists "settings_user_read" on public.app_settings;
 create policy "settings_user_read" on public.app_settings
   for select using (auth.uid() is not null);
+drop policy if exists "settings_admin_write" on public.app_settings;
 create policy "settings_admin_write" on public.app_settings
   for all using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "admin_logs_admin_read" on public.admin_logs;
 create policy "admin_logs_admin_read" on public.admin_logs
   for select using (public.is_admin());
 
