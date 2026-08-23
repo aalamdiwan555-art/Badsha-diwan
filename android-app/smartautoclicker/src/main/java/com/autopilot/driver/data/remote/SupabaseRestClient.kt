@@ -175,6 +175,7 @@ class SupabaseRestClient(
         adminId: String,
         name: String,
         description: String?,
+        scenarioData: JSONObject,
     ) = withContext(Dispatchers.IO) {
         request(
             method = "POST",
@@ -183,7 +184,7 @@ class SupabaseRestClient(
                 .put("admin_id", adminId)
                 .put("name", name)
                 .put("description", description)
-                .put("scenario_data", JSONObject().put("version", 1).put("actions", JSONArray()))
+                .put("scenario_data", scenarioData)
                 .put("is_active", true)
                 .put("is_global", true)
                 .toString(),
