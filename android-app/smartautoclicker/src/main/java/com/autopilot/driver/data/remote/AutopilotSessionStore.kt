@@ -14,6 +14,9 @@ class AutopilotSessionStore(context: Context) {
     val accessToken: String?
         get() = preferences.getString(KEY_ACCESS_TOKEN, null)
 
+    val refreshToken: String?
+        get() = preferences.getString(KEY_REFRESH_TOKEN, null)
+
     val userId: String?
         get() = preferences.getString(KEY_USER_ID, null)
 

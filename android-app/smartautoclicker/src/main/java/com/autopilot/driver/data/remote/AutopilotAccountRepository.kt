@@ -26,17 +26,22 @@ class AutopilotAccountRepository(
     suspend fun loadSavedAccount(): AuthResult? {
         val accessToken = sessionStore.accessToken ?: return null
         val userId = sessionStore.userId ?: return null
-        val profile = client.fetchProfile(accessToken, userId) ?: return null
-        return AuthResult.Authenticated(
-            session = AuthSession(
-                accessToken = accessToken,
-                refreshToken = null,
+        val savedSession = AuthSession(
+            accessToken = accessToken,
+            refreshToken = sessionStore.refreshToken,
+            userId = userId,
+            email = sessionStore.email,
+        )
+
+        return runCatching { loadAccount(savedSession) }.getOrElse { originalError ->
+            val refreshToken = sessionStore.refreshToken ?: throw originalError
+            val refreshedSession = client.refreshSession(refreshToken).copy(
                 userId = userId,
                 email = sessionStore.email,
-            ),
-            profile = profile,
-            availableModes = client.fetchActiveScenarios(accessToken),
-        )
+            )
+            sessionStore.save(refreshedSession)
+            loadAccount(refreshedSession)
+        }
     }
 
     suspend fun selectMode(mode: ScenarioMode) {

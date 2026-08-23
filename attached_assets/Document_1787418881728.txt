@@ -510,3 +510,14 @@ DETAILS:
   - Reads common Supabase error fields in priority order
   - Preserves a safe HTTP fallback when the response has no useful message
   - Keeps credentials and response tokens out of user-facing errors
+
+--- CHECKPOINT 32: Session Refresh Added ---
+DATE: 2026-08-23
+WHAT: Added Supabase refresh-token recovery for saved sessions
+WHY: Long-lived users should remain signed in after a short-lived access token expires
+WHERE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/data/remote
+DETAILS:
+  - Saved refresh tokens are now available to the session repository
+  - Expired saved access tokens trigger one refresh request
+  - Refreshed credentials replace the old local session
+  - Existing user identity is preserved when the refresh response omits profile details

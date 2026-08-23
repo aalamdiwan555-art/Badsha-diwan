@@ -62,6 +62,25 @@ class SupabaseRestClient(
             )
         }
 
+    suspend fun refreshSession(refreshToken: String): AuthSession =
+        withContext(Dispatchers.IO) {
+            val response = JSONObject(request(
+                method = "POST",
+                path = SupabaseConfig.AUTH_REFRESH_PATH,
+                body = JSONObject().put("refresh_token", refreshToken).toString(),
+                accessToken = null,
+            ))
+
+            AuthSession(
+                accessToken = response.getString("access_token"),
+                refreshToken = response.optString("refresh_token")
+                    .takeIf { it.isNotBlank() }
+                    ?: refreshToken,
+                userId = response.optJSONObject("user")?.optString("id"),
+                email = response.optJSONObject("user")?.optString("email"),
+            )
+        }
+
     suspend fun fetchProfile(accessToken: String, userId: String): UserProfile? =
         withContext(Dispatchers.IO) {
             val rows = JSONArray(
