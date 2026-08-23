@@ -39,7 +39,7 @@
     <string name="admin_mode_count">Published modes: %1$d</string>
     <string name="admin_mode_item">%1$s · version %2$d</string>
     <string name="admin_loading">Checking administrator access…</string>
-    <string name="admin_read_only_status">Administrator access verified. Mode mutations stay server-authorized.</string>
+    <string name="admin_read_only_status">Administrator access verified. Changes are protected by server authorization.</string>
     <string name="admin_refresh">Refresh modes</string>
     <string name="admin_mode_name_hint">Mode name</string>
     <string name="admin_mode_description_hint">Description (optional)</string>

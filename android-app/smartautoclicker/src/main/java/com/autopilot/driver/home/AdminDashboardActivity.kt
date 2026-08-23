@@ -21,8 +21,8 @@ import kotlinx.coroutines.launch
 /**
  * Administrator-only entry point.
  *
- * Mutating controls will be added behind server-authorized endpoints. This
- * screen deliberately never treats a client-side email check as permission.
+ * Mutating controls call server-authorized endpoints. This screen deliberately
+ * never treats a client-side email check as permission.
  */
 class AdminDashboardActivity : ComponentActivity() {
 

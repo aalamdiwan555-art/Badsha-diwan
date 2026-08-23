@@ -133,18 +133,23 @@ class SupabaseRestClient(
                 ),
             )
 
-            buildList(rows.length()) {
-                for (index in 0 until rows.length()) {
+             buildList(minOf(rows.length(), MAX_PUBLISHED_MODES)) {
+                 for (index in 0 until minOf(rows.length(), MAX_PUBLISHED_MODES)) {
                     val row = rows.getJSONObject(index)
-                    add(
-                        ScenarioMode(
-                            id = row.getString("id"),
-                            name = row.getString("name"),
-                            description = row.optString("description").takeIf { it.isNotBlank() },
-                            version = row.optInt("version", 1),
-                            scenarioData = row.optJSONObject("scenario_data") ?: JSONObject(),
-                        ),
-                    )
+                     val scenarioData = row.optJSONObject("scenario_data") ?: continue
+                     if (!ScenarioValidator.validate(scenarioData)) continue
+                     val name = row.optString("name").trim()
+                     if (name.isBlank() || name.length > 80) continue
+                     add(
+                         ScenarioMode(
+                             id = row.getString("id"),
+                             name = name,
+                             description = row.optString("description").trim()
+                                 .takeIf { it.isNotBlank() },
+                             version = row.optInt("version", 1).coerceAtLeast(1),
+                             scenarioData = scenarioData,
+                         ),
+                     )
                 }
             }
         }
@@ -308,6 +313,8 @@ class SupabaseRestClient(
         return responseText
     }
 }
+
+private const val MAX_PUBLISHED_MODES = 15
 
 data class AuthSession(
     val accessToken: String,

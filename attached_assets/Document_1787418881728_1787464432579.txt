@@ -400,6 +400,17 @@ DETAILS:
   - Keep the selected mode synchronized with the local cache after server refresh
   - Add a confirmation dialog before deleting a mode globally
 
+--- CHECKPOINT 27: Remote Mode Validation Hardened ---
+DATE: 2026-08-23
+WHAT: Validated and bounded published mode payloads before client use
+WHY: Remote scenario JSON is a trust boundary and must not reach the local click engine unless it matches the supported payload limits
+WHERE: SupabaseRestClient, AdminDashboardActivity, string resources
+DETAILS:
+  - Reject malformed scenario objects and entries without a valid actions array
+  - Enforce the 15-mode client limit and 80-character trimmed names
+  - Normalize descriptions and versions before caching
+  - Clarify that administrator mutations are server-authorized rather than read-only
+
 ================================================================================
 KEY CONTACT & REFERENCES
 ================================================================================
