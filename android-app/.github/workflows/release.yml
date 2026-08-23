@@ -27,6 +27,7 @@ jobs:
 
     - name: Restore keystore
       run: |
+<<<<<<< HEAD
         printf '%s' "${{ secrets.RELEASE_KEYSTORE }}" > smartautoclicker.jks.asc
         gpg --batch --quiet --decrypt \
           --passphrase "${{ secrets.RELEASE_KEYSTORE_PASSPHRASE }}" \
@@ -36,6 +37,13 @@ jobs:
     - name: Build with Gradle
       run: |
         cd android-app
+=======
+        echo "${{ secrets.RELEASE_KEYSTORE }}" > smartautoclicker.jks.asc
+        gpg -d --passphrase "${{ secrets.RELEASE_KEYSTORE_PASSPHRASE }}" --batch smartautoclicker.jks.asc > smartautoclicker/smartautoclicker.jks
+
+    - name: Build with Gradle
+      run: |
+>>>>>>> da28de07b6eb76d9dc86a4682579c71c09c2098a
         ./gradlew --info \
           -PsigningStorePassword="${{ secrets.SIGNING_STORE_PASSWORD }}" \
           -PsigningKeyAlias="${{ secrets.SIGNING_KEY_ALIAS }}" \
@@ -49,4 +57,8 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       with:
         draft: true
+<<<<<<< HEAD
         files: android-app/smartautoclicker/build/outputs/apk/fDroid/release/*.apk
+=======
+        files: smartautoclicker/build/outputs/apk/fDroid/release/*.apk
+>>>>>>> da28de07b6eb76d9dc86a4682579c71c09c2098a

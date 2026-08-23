@@ -33,6 +33,10 @@
     <application
         android:name="${smartAutoClickerApplication}"
         android:allowBackup="false"
+<<<<<<< HEAD
+=======
+        <!-- TODO: Replace the legacy icon resources with branded Autopilot artwork. -->
+>>>>>>> da28de07b6eb76d9dc86a4682579c71c09c2098a
         android:icon="@mipmap/ic_smart_auto_clicker"
         android:label="${appName}"
         android:roundIcon="@mipmap/ic_smart_auto_clicker_round"

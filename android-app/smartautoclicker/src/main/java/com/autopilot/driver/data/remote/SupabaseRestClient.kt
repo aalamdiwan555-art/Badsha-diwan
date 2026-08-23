@@ -217,7 +217,11 @@ class SupabaseRestClient(
                 .put("name", name)
                 .put("description", description)
                 .put("scenario_data", scenarioData)
+<<<<<<< HEAD
                 .put("version", scenarioData.optInt("version", 1).coerceAtLeast(1) + 1)
+=======
+                .put("version", scenarioData.optInt("version", 1))
+>>>>>>> da28de07b6eb76d9dc86a4682579c71c09c2098a
                 .toString(),
             accessToken = accessToken,
             extraHeaders = mapOf("Prefer" to "return=minimal"),

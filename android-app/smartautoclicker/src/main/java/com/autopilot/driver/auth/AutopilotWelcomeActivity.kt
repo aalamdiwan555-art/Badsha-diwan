@@ -9,14 +9,20 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
+<<<<<<< HEAD
 import com.autopilot.driver.data.remote.AppUpdateChecker
+=======
+>>>>>>> da28de07b6eb76d9dc86a4682579c71c09c2098a
 import com.autopilot.driver.data.remote.AutopilotSessionStore
 import com.autopilot.driver.data.remote.AuthResult
 import com.autopilot.driver.data.remote.SupabaseRestClient
 import com.autopilot.driver.home.AdminDashboardActivity
 import com.buzbuz.smartautoclicker.R
+<<<<<<< HEAD
 import android.net.Uri
 import androidx.appcompat.app.AlertDialog
+=======
+>>>>>>> da28de07b6eb76d9dc86a4682579c71c09c2098a
 import kotlinx.coroutines.launch
 
 /**
@@ -42,7 +48,10 @@ class AutopilotWelcomeActivity : ComponentActivity() {
             sessionStore = AutopilotSessionStore(applicationContext),
         )
     }
+<<<<<<< HEAD
     private val updateChecker by lazy { AppUpdateChecker() }
+=======
+>>>>>>> da28de07b6eb76d9dc86a4682579c71c09c2098a
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,6 +72,7 @@ class AutopilotWelcomeActivity : ComponentActivity() {
         }
         updateMode()
 
+<<<<<<< HEAD
         checkForRequiredUpdate()
     }
 
@@ -86,6 +96,8 @@ class AutopilotWelcomeActivity : ComponentActivity() {
     }
 
     private fun loadSavedAccount() {
+=======
+>>>>>>> da28de07b6eb76d9dc86a4682579c71c09c2098a
         lifecycleScope.launch {
             runCatching { accountRepository.loadSavedAccount() }
                 .getOrNull()
@@ -93,6 +105,7 @@ class AutopilotWelcomeActivity : ComponentActivity() {
         }
     }
 
+<<<<<<< HEAD
     private fun showUpdateRequiredDialog(updateUrl: String) {
         AlertDialog.Builder(this)
             .setTitle(R.string.update_required_title)
@@ -115,6 +128,8 @@ class AutopilotWelcomeActivity : ComponentActivity() {
             .show()
     }
 
+=======
+>>>>>>> da28de07b6eb76d9dc86a4682579c71c09c2098a
     private fun authenticate() {
         val email = emailInput.text.toString().trim()
         val password = passwordInput.text.toString()
