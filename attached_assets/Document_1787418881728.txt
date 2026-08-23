@@ -674,3 +674,13 @@ DETAILS:
   - Clears the active access and selected mode state before every profile request
   - Disables Start immediately until the server confirms the current profile
   - Keeps the existing server-side subscription and mode checks as the final authority
+
+--- CHECKPOINT 45: Autopilot Documentation Cleanup Added ---
+DATE: 2026-08-23
+WHAT: Removed inherited product naming from the Android README
+WHY: Public documentation must consistently describe Autopilot rather than the upstream project
+WHERE: android-app/README.md
+DETAILS:
+  - Replaced inherited tutorial and project references with Autopilot wording
+  - Kept the README focused on the current remote-mode product
+  - Removed an obsolete upstream obfuscation link from the support section
