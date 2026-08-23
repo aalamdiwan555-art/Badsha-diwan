@@ -216,6 +216,40 @@ class SupabaseRestClient(
         )
     }
 
+    suspend fun grantSubscription(
+        accessToken: String,
+        userId: String,
+        durationDays: Int,
+        note: String?,
+    ) = withContext(Dispatchers.IO) {
+        request(
+            method = "POST",
+            path = SupabaseConfig.ADMIN_GRANT_SUBSCRIPTION_RPC,
+            body = JSONObject()
+                .put("target_user_id", userId)
+                .put("grant_duration_days", durationDays)
+                .put("grant_note", note)
+                .toString(),
+            accessToken = accessToken,
+        )
+    }
+
+    suspend fun setAdFree(
+        accessToken: String,
+        userId: String,
+        adFree: Boolean,
+    ) = withContext(Dispatchers.IO) {
+        request(
+            method = "POST",
+            path = SupabaseConfig.ADMIN_SET_AD_FREE_RPC,
+            body = JSONObject()
+                .put("target_user_id", userId)
+                .put("ad_free_value", adFree)
+                .toString(),
+            accessToken = accessToken,
+        )
+    }
+
     private fun request(
         method: String,
         path: String,

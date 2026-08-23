@@ -81,6 +81,18 @@ class AutopilotAccountRepository(
         client.updateScenario(accessToken, scenarioId, name.trim(), description?.trim(), scenarioData)
     }
 
+    suspend fun grantSubscription(userId: String, durationDays: Int, note: String?) {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot grant access without an authenticated session")
+        client.grantSubscription(accessToken, userId, durationDays, note?.trim())
+    }
+
+    suspend fun setAdFree(userId: String, adFree: Boolean) {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot change ad-free status without an authenticated session")
+        client.setAdFree(accessToken, userId, adFree)
+    }
+
     fun signOut() = sessionStore.clear()
 
     private suspend fun loadAccount(session: AuthSession): AuthResult {

@@ -566,3 +566,15 @@ DETAILS:
   - Updates require valid JSON with an actions array before being sent
   - Version metadata is preserved in the published scenario definition
   - Update requests remain protected by the signed-in Supabase token and RLS
+
+--- CHECKPOINT 37: Privileged Admin RPCs Added ---
+DATE: 2026-08-23
+WHAT: Added server-authorized and auditable subscription and ad-free mutations
+WHY: Privileged account changes must not rely on direct client profile writes
+WHERE: Supabase schema, Android REST client and account repository
+DETAILS:
+  - Added admin-only RPC for supported subscription durations and lifetime access
+  - Added admin-only RPC for granting and removing ad-free status
+  - Both operations write admin_logs records with the target and change details
+  - RPCs reject non-admin callers, unsupported durations, and missing users
+  - Android calls use the signed-in access token and never require a service key

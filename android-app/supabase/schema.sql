@@ -170,3 +170,88 @@ create policy "settings_admin_write" on public.app_settings
 
 create policy "admin_logs_admin_read" on public.admin_logs
   for select using (public.is_admin());
+
+-- Privileged mutations are exposed as narrowly-scoped RPCs rather than
+-- allowing the Android client to write subscription state directly.
+create or replace function public.admin_grant_subscription(
+  target_user_id uuid,
+  grant_duration_days integer,
+  grant_note text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  expires_at_value timestamptz;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required';
+  end if;
+
+  if grant_duration_days = 99999 then
+    expires_at_value := '2099-12-31T00:00:00Z'::timestamptz;
+  elsif grant_duration_days in (1, 2, 3, 7, 15, 30, 90, 365) then
+    expires_at_value := now() + make_interval(days => grant_duration_days);
+  else
+    raise exception 'Unsupported subscription duration';
+  end if;
+
+  update public.profiles
+  set subscription_status = 'active',
+      subscription_expires_at = expires_at_value,
+      updated_at = now()
+  where id = target_user_id;
+
+  if not found then
+    raise exception 'Target user not found';
+  end if;
+
+  insert into public.subscriptions (
+    user_id, granted_by, plan_type, duration_days, expires_at, note
+  ) values (
+    target_user_id, auth.uid(), 'admin_granted', grant_duration_days,
+    expires_at_value, grant_note
+  );
+
+  insert into public.admin_logs (admin_id, action, target_user_id, details)
+  values (
+    auth.uid(), 'grant_subscription', target_user_id,
+    jsonb_build_object('duration_days', grant_duration_days, 'note', grant_note)
+  );
+end;
+$$;
+
+create or replace function public.admin_set_ad_free(
+  target_user_id uuid,
+  ad_free_value boolean
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required';
+  end if;
+
+  update public.profiles
+  set is_ad_free = ad_free_value,
+      updated_at = now()
+  where id = target_user_id;
+
+  if not found then
+    raise exception 'Target user not found';
+  end if;
+
+  insert into public.admin_logs (admin_id, action, target_user_id, details)
+  values (
+    auth.uid(),
+    case when ad_free_value then 'grant_ad_free' else 'remove_ad_free' end,
+    target_user_id,
+    jsonb_build_object('is_ad_free', ad_free_value)
+  );
+end;
+$$;

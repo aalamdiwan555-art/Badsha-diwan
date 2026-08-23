@@ -17,6 +17,8 @@ object SupabaseConfig {
     const val SCENARIOS_PATH =
         "/rest/v1/scenarios?select=*&is_active=eq.true&order=created_at.asc"
     const val SCENARIOS_TABLE_PATH = "/rest/v1/scenarios"
+    const val ADMIN_GRANT_SUBSCRIPTION_RPC = "/rest/v1/rpc/admin_grant_subscription"
+    const val ADMIN_SET_AD_FREE_RPC = "/rest/v1/rpc/admin_set_ad_free"
 
     fun profilePath(userId: String): String =
         "/rest/v1/profiles?select=*&id=eq.$userId"
