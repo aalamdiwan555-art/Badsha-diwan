@@ -629,3 +629,14 @@ DETAILS:
   - Enforces a maximum of 15 active scenarios at the database boundary
   - Rejects duplicate active mode names case-insensitively
   - Rejects scenario JSON nested beyond the supported depth
+
+--- CHECKPOINT 43: Automatic Profile Bootstrap Added ---
+DATE: 2026-08-23
+WHAT: Added a Supabase Auth trigger that creates each new profile and seeds the administrator role
+WHY: Registration must produce the profile row required by the Android account flow without exposing privileged writes to the client
+WHERE: Supabase schema
+DETAILS:
+  - Creates a profile after every auth.users insert
+  - Assigns the administrator role only to the configured administrator email
+  - Defaults all other new accounts to the user role
+  - Uses a security-definer function and conflict protection for safe retries
