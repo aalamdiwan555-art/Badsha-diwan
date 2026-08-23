@@ -412,6 +412,17 @@ DETAILS:
   - Added clear validation and email-confirmation feedback
   - Kept the existing accessibility engine behind the authenticated entry point
 
+--- CHECKPOINT 29: First-Login Mode Selection Added ---
+DATE: 2026-08-23
+WHAT: Added the read-only Mode selection screen for authenticated users
+WHY: Users must choose an administrator-published scenario before starting the clicker
+WHERE: Mode selection activity, layout, manifest, authentication routing
+DETAILS:
+  - Loads active modes from Supabase after authentication
+  - Allows the user to select and save one mode remotely
+  - Shows a clear empty state when no modes are published
+  - Keeps mode creation and editing outside the user experience
+
 ================================================================================
 KEY CONTACT & REFERENCES
 ================================================================================

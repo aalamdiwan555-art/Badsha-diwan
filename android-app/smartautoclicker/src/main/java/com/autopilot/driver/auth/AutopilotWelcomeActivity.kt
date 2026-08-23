@@ -59,7 +59,7 @@ class AutopilotWelcomeActivity : ComponentActivity() {
         lifecycleScope.launch {
             runCatching { accountRepository.loadSavedAccount() }
                 .getOrNull()
-                ?.let { openClicker() }
+                ?.let { openNextScreen(it) }
         }
     }
 
@@ -85,7 +85,7 @@ class AutopilotWelcomeActivity : ComponentActivity() {
                 .onSuccess { authResult ->
                     setLoading(false)
                     when (authResult) {
-                        is AuthResult.Authenticated -> openClicker()
+                        is AuthResult.Authenticated -> openNextScreen(authResult)
                         is AuthResult.EmailConfirmationRequired ->
                             showStatus(getString(R.string.auth_email_confirmation))
                     }
@@ -95,6 +95,16 @@ class AutopilotWelcomeActivity : ComponentActivity() {
                     showStatus(it.message ?: getString(R.string.auth_generic_error))
                 }
         }
+    }
+
+    private fun openNextScreen(result: AuthResult.Authenticated) {
+        val destination = if (result.profile.selectedScenarioId == null) {
+            ModeSelectionActivity::class.java
+        } else {
+            ScenarioActivity::class.java
+        }
+        startActivity(Intent(this, destination))
+        finish()
     }
 
     private fun openClicker() {
