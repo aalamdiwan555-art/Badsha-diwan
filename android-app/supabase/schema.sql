@@ -550,9 +550,11 @@ begin
   end if;
   if not exists (
     select 1 from public.scenarios
-    where id = scenario_id_value and is_active
+    where id = scenario_id_value
+      and is_active
+      and (is_global or auth.uid() = any(target_users))
   ) then
-    raise exception 'Published mode not found';
+    raise exception 'Published mode is not available for this account';
   end if;
 
   insert into public.click_sessions (user_id, scenario_id)
