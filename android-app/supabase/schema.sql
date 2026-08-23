@@ -203,9 +203,6 @@ alter table public.admin_logs enable row level security;
 
 create policy "profiles_self_read" on public.profiles
   for select using (id = auth.uid() or public.is_admin());
-create policy "profiles_self_update" on public.profiles
-  for update using (id = auth.uid() or public.is_admin())
-  with check (id = auth.uid() or public.is_admin());
 
 create policy "scenarios_visible_to_users" on public.scenarios
   for select using (
@@ -241,6 +238,63 @@ create policy "settings_admin_write" on public.app_settings
 
 create policy "admin_logs_admin_read" on public.admin_logs
   for select using (public.is_admin());
+
+-- Users may choose only a published mode. There is intentionally no direct
+-- profile update policy: subscription, role, ad-free, and ban fields must not
+-- be writable by a client, even when the client is signed in.
+create or replace function public.select_scenario(scenario_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required';
+  end if;
+
+  if not exists (
+    select 1
+    from public.scenarios
+    where id = scenario_id
+      and is_active
+      and (is_global or auth.uid() = any(target_users))
+  ) then
+    raise exception 'That mode is no longer available';
+  end if;
+
+  update public.profiles
+  set selected_scenario_id = scenario_id,
+      selected_scenario_name = (
+        select name from public.scenarios where id = scenario_id
+      ),
+      updated_at = now()
+  where id = auth.uid();
+
+  if not found then
+    raise exception 'Profile not found';
+  end if;
+end;
+$$;
+
+create or replace function public.clear_selected_scenario()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required';
+  end if;
+
+  update public.profiles
+  set selected_scenario_id = null,
+      selected_scenario_name = null,
+      updated_at = now()
+  where id = auth.uid();
+end;
+$$;
 
 -- Privileged mutations are exposed as narrowly-scoped RPCs rather than
 -- allowing the Android client to write subscription state directly.
@@ -371,6 +425,10 @@ $$;
 -- internal admin check remains the authorization boundary for signed-in users.
 revoke all on function public.admin_grant_subscription(uuid, integer, text) from public;
 grant execute on function public.admin_grant_subscription(uuid, integer, text) to authenticated;
+revoke all on function public.select_scenario(uuid) from public;
+grant execute on function public.select_scenario(uuid) to authenticated;
+revoke all on function public.clear_selected_scenario() from public;
+grant execute on function public.clear_selected_scenario() to authenticated;
 revoke all on function public.admin_set_ad_free(uuid, boolean) from public;
 grant execute on function public.admin_set_ad_free(uuid, boolean) to authenticated;
 revoke all on function public.admin_set_banned(uuid, boolean, text) from public;

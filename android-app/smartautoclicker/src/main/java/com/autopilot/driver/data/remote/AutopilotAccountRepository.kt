@@ -48,9 +48,7 @@ class AutopilotAccountRepository(
     suspend fun selectMode(mode: ScenarioMode) {
         val accessToken = sessionStore.accessToken
             ?: error("Cannot select a mode without an authenticated session")
-        val userId = sessionStore.userId
-            ?: error("Cannot select a mode without an authenticated user")
-        client.selectScenario(accessToken, userId, mode)
+        client.selectScenario(accessToken, mode)
         modeCache.saveSelectedMode(mode)
     }
 
@@ -139,7 +137,7 @@ class AutopilotAccountRepository(
             (profile.selectedScenarioId != selectedMode.id ||
                 profile.selectedScenarioName != selectedMode.name)
         ) {
-            client.selectScenario(accessToken, userId, selectedMode)
+            client.selectScenario(accessToken, selectedMode)
             modeCache.saveSelectedMode(selectedMode)
             profile.copy(
                 selectedScenarioId = selectedMode.id,
@@ -149,7 +147,7 @@ class AutopilotAccountRepository(
             // A deleted or unpublished mode must not remain selected locally.
             // Best-effort persistence keeps offline refreshes usable while
             // ensuring the next online refresh repairs the server profile.
-            runCatching { client.clearSelectedScenario(accessToken, userId) }
+            runCatching { client.clearSelectedScenario(accessToken) }
             profile.copy(
                 selectedScenarioId = null,
                 selectedScenarioName = null,

@@ -108,29 +108,24 @@ class SupabaseRestClient(
 
     suspend fun selectScenario(
         accessToken: String,
-        userId: String,
         scenario: ScenarioMode,
     ) = withContext(Dispatchers.IO) {
         request(
-            method = "PATCH",
-            path = SupabaseConfig.updateProfilePath(userId),
+            method = "POST",
+            path = SupabaseConfig.SELECT_SCENARIO_RPC,
             body = JSONObject()
-                .put("selected_scenario_id", scenario.id)
-                .put("selected_scenario_name", scenario.name)
+                .put("scenario_id", scenario.id)
                 .toString(),
             accessToken = accessToken,
         )
     }
 
-    suspend fun clearSelectedScenario(accessToken: String, userId: String) =
+    suspend fun clearSelectedScenario(accessToken: String) =
         withContext(Dispatchers.IO) {
             request(
-                method = "PATCH",
-                path = SupabaseConfig.updateProfilePath(userId),
-                body = JSONObject()
-                    .put("selected_scenario_id", JSONObject.NULL)
-                    .put("selected_scenario_name", JSONObject.NULL)
-                    .toString(),
+                method = "POST",
+                path = SupabaseConfig.CLEAR_SELECTED_SCENARIO_RPC,
+                body = "{}",
                 accessToken = accessToken,
             )
         }
