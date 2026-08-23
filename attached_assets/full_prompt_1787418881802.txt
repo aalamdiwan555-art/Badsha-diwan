@@ -1,0 +1,909 @@
+# 🎯 FINAL MASTER PROMPT: AUTOPILOT — Android App (NOT Website)
+# ⚠️ CRITICAL: THIS PROMPT IS FOR BUILDING AN ANDROID APPLICATION ONLY
+# ⚠️ DO NOT BUILD A WEBSITE, WEB APP, OR PWA — NATIVE ANDROID APP ONLY
+# ⚠️ PLATFORM: Android (Kotlin + Jetpack Compose)
+# ⚠️ PACKAGE NAME: com.autopilot.driver
+# ⚠️ APP NAME: Autopilot
+
+================================================================================
+SECTION 0: CRITICAL PLATFORM DECLARATION
+================================================================================
+
+THIS PROJECT IS AN ANDROID NATIVE APPLICATION. 
+- Build using Kotlin programming language
+- UI built with Jetpack Compose
+- Android Studio as IDE
+- Output is an APK/AAB file
+- NOT a website, NOT a web app, NOT a PWA, NOT a Flutter app
+- Fork Smart-AutoClicker from: https://github.com/Nain57/Smart-AutoClicker.git
+
+================================================================================
+SECTION 1: PROJECT OVERVIEW
+================================================================================
+
+Build a production-grade Android AutoClicker application named "Autopilot" 
+(package: com.autopilot.driver) forked from Smart-AutoClicker with a strict 
+dual-role architecture:
+
+USER ROLE:
+- Minimal UI — only Start/Stop buttons
+- All scenarios remotely controlled by Admin
+- App is 100% FREE — no paid plans exist
+- Users earn subscription time ONLY by watching reward ads OR admin grants it
+- User selects a "Mode" (scenario name) from dropdown — this acts as language/scenario selector
+- Admin can upload up to 15 scenarios, each with a unique name
+
+ADMIN ROLE:
+- Full control panel to create, edit, delete, and globally push scenarios
+- Admin can make any user 100% ad-free
+- Admin can manually grant subscriptions: 1 day, 2 days, 3 days, 7 days, 15 days, 
+  30 days, 90 days, 365 days, lifetime
+- Admin email: aalamdiwan555@gmail.com (hardcoded super-admin)
+
+================================================================================
+SECTION 2: SUPABASE CONFIGURATION (STRICT — NEVER MODIFY)
+================================================================================
+
+SUPABASE_URL=https://rhwpbnzbevufolojjimh.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_djOPp-ptG00MCdzNxXxL7A_Hq27r9BN
+SUPABASE_SECRET_KEY=[REDACTED — store only in secure server-side secrets]
+SUPABASE_JWKS_URL=https://rhwpbnzbevufolojjimh.supabase.co/auth/v1/.well-known/jwks.json
+
+RULES:
+- SUPABASE_SECRET_KEY is NEVER exposed in client/Android code
+- Only use SUPABASE_SECRET_KEY in Supabase Edge Functions (server-side)
+- Android app only uses SUPABASE_PUBLISHABLE_KEY
+
+================================================================================
+SECTION 3: UNITY ADS CONFIGURATION (STRICT — NEVER MODIFY)
+================================================================================
+
+Android Game ID: 6178983
+iOS Game ID: 6178982
+Organization ID: 13469908655812
+
+Ad Units Required:
+- Banner Ad (Floating Window Banner — persistent overlay)
+- Banner Ad (In-App Banner — inside app screens)
+- Interstitial Ad (Short Ad — every 2 minutes)
+- Rewarded Ad (User must watch 20 reward ads = 1 day subscription renewal)
+
+================================================================================
+SECTION 4: APP ARCHITECTURE & ROLES
+================================================================================
+
+ADMIN (aalamdiwan555@gmail.com):
+- Create/edit/delete/push AutoClicker scenarios
+- Enable/disable scenarios globally or per-user
+- View all users and device info
+- MANUALLY GRANT SUBSCRIPTIONS: 1d, 2d, 3d, 7d, 15d, 30d, 90d, 365d, lifetime
+- MAKE ANY USER 100% AD-FREE (bypass all ads)
+- REMOVE AD-FREE STATUS from any user
+- Ban/unban users
+- View analytics and revenue reports
+- Set global app settings
+
+USER:
+- Sign up/log in via Supabase Auth (Email/OTP, Google OAuth)
+- View ONLY Start/Stop button on main screen
+- Select "Mode" (scenario name) from dropdown on first login
+- Auto-download admin-published scenarios
+- Start/Stop auto-clicker service
+- Watch reward ads to earn subscription time (20 ads = 1 day)
+- View subscription status
+- NO PAID OPTIONS — app is 100% free
+
+================================================================================
+SECTION 5: SUPABASE DATABASE SCHEMA
+================================================================================
+
+--- Table: profiles ---
+create table profiles (
+  id uuid references auth.users on delete cascade primary key,
+  email text unique not null,
+  role text default 'user' check (role in ('admin', 'user')),
+  subscription_status text default 'inactive' check (subscription_status in ('active', 'inactive', 'expired', 'trial')),
+  subscription_expires_at timestamptz,
+  is_ad_free boolean default false,
+  ads_watched_today int default 0,
+  total_ads_watched int default 0,
+  last_ad_watched_at timestamptz,
+  selected_scenario_id uuid references scenarios(id),
+  selected_scenario_name text,
+  device_info jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+--- Table: scenarios ---
+create table scenarios (
+  id uuid default gen_random_uuid() primary key,
+  admin_id uuid references profiles(id) not null,
+  name text not null,
+  description text,
+  scenario_data jsonb not null,
+  is_active boolean default true,
+  is_global boolean default true,
+  target_users uuid[] default null,
+  version int default 1,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+--- Table: user_scenarios ---
+create table user_scenarios (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references profiles(id) on delete cascade,
+  scenario_id uuid references scenarios(id) on delete cascade,
+  is_downloaded boolean default false,
+  is_enabled boolean default true,
+  downloaded_at timestamptz,
+  unique(user_id, scenario_id)
+);
+
+--- Table: subscriptions ---
+create table subscriptions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references profiles(id) on delete cascade,
+  granted_by uuid references profiles(id),
+  plan_type text default 'reward_ad' check (plan_type in ('reward_ad', 'admin_granted')),
+  duration_days int,
+  started_at timestamptz default now(),
+  expires_at timestamptz,
+  is_active boolean default true,
+  note text,
+  created_at timestamptz default now()
+);
+
+--- Table: ad_events ---
+create table ad_events (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references profiles(id),
+  ad_type text not null,
+  event_type text not null,
+  revenue_estimate decimal(10,6),
+  created_at timestamptz default now()
+);
+
+--- Table: click_sessions ---
+create table click_sessions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references profiles(id),
+  scenario_id uuid references scenarios(id),
+  started_at timestamptz default now(),
+  ended_at timestamptz,
+  total_clicks int default 0,
+  duration_seconds int,
+  device_info jsonb
+);
+
+--- Table: app_settings ---
+create table app_settings (
+  id int primary key default 1,
+  interstitial_interval_minutes int default 2,
+  reward_ads_for_one_day int default 20,
+  trial_days int default 3,
+  updated_at timestamptz default now()
+);
+
+--- Table: admin_logs ---
+create table admin_logs (
+  id uuid default gen_random_uuid() primary key,
+  admin_id uuid references profiles(id),
+  action text not null,
+  target_user_id uuid references profiles(id),
+  details jsonb,
+  created_at timestamptz default now()
+);
+
+--- Row Level Security (RLS) ---
+- profiles: Users read own only. Admin reads all.
+- scenarios: Admin full CRUD. Users read assigned only.
+- user_scenarios: Users read own only. Admin reads all.
+- subscriptions: Users read own only. Admin full access.
+- ad_events: Users insert own. Admin reads all.
+- click_sessions: Users insert own. Admin reads all.
+- app_settings: Admin full CRUD. Users read-only.
+- admin_logs: Admin read-only. Auto-inserted via Edge Functions.
+
+--- Realtime Subscriptions ---
+Enable Realtime on: scenarios, user_scenarios, profiles, app_settings
+When admin updates scenario → all users receive update within 3 seconds.
+
+================================================================================
+SECTION 6: SCENARIO SELECTOR — "MODE" SYSTEM (SCENARIO NAME = SELECTOR)
+================================================================================
+
+CONCEPT:
+Admin uploads up to 15 scenarios. Each scenario's NAME becomes a "Mode" option.
+User sees a dropdown on first login listing all scenario names.
+User selects one → that scenario downloads and applies.
+The selected scenario name is saved to the user's profile.
+
+USER FLOW — FIRST LOGIN:
+1. User logs in successfully
+2. App fetches list of all active scenarios from Supabase
+3. Shows "Select Your Mode" screen with dropdown
+4. User picks a scenario name (e.g., "English", "Hindi", "Game Mode", "Farm Mode")
+5. Save selected_scenario_id and selected_scenario_name to profiles
+6. Download scenario JSON, store in Room DB
+7. Redirect to Home Screen
+
+USER FLOW — CHANGE MODE:
+1. User taps "Mode: [Name] ▼" on home screen header
+2. Dropdown shows all available scenario names
+3. User selects different scenario
+4. Download new scenario JSON
+5. Replace active scenario
+6. Show toast: "✅ Switched to [Scenario Name]"
+7. If download fails → Keep previous, show error
+
+ADMIN FLOW — CREATE SCENARIO:
+1. Admin opens "Create Scenario"
+2. Enters Scenario Name (this becomes the mode option users see)
+3. Builds scenario using visual editor
+4. Publishes → appears in all users' dropdown instantly
+
+MAXIMUM: 15 scenarios total. Enforce in admin UI.
+
+EDGE CASES:
+- No scenarios published → "No modes available. Check back later."
+- Selected scenario deleted → Auto-switch to first available, notify user
+- Scenario updated by admin → Auto-download latest, notify user
+- User offline → Show cached list, use last selected
+
+================================================================================
+SECTION 7: UI/UX DESIGN SPECIFICATIONS
+================================================================================
+
+THEME:
+- Dark futuristic cyberpunk
+- Primary: #0A0A0F
+- Accent: #00F0FF (cyan neon)
+- Secondary: #B829F7 (purple neon)
+- App icon: Steering wheel with neon glow
+- Typography: Montserrat / Roboto
+
+ANIMATIONS:
+- Lottie splash: Car steering wheel with "Autopilot" text
+- Pulse glow on Start/Stop buttons
+- Floating particle background on auth screens
+- Smooth slide transitions (300ms, ease-out)
+- Ripple effects on all buttons
+- Shimmer skeletons for data loading
+- Confetti on reward completion
+- Progress bar animation for ad counter (0/20 → 20/20)
+- Fireworks on lifetime subscription grant
+
+SCREEN 1: SPLASH SCREEN
+- Animated steering wheel logo with glitch effect
+- "Autopilot" text with typewriter animation
+- "100% FREE" pulsing badge
+- Loading shimmer bar
+- Auto-redirect after 2.5 seconds
+
+SCREEN 2: AUTHENTICATION
+- Login: Email + Password, Google OAuth
+- Register: Email + Password + Confirm
+- OTP: 6-digit auto-focus input
+- Background: Animated gradient mesh with particles
+- Floating label animations on inputs
+
+SCREEN 3: SELECT MODE (FIRST LOGIN ONLY)
+┌─────────────────────────────────────────┐
+│  🚗 Welcome to Autopilot                │
+│                                         │
+│  Select your mode:                      │
+│  [Dropdown: ▼ English]                  │
+│    • English                            │
+│    • Hindi                              │
+│    • Bengali                            │
+│    • Telugu                             │
+│    • Marathi                            │
+│    • Tamil                              │
+│    • Urdu                               │
+│    • Gujarati                           │
+│    • Kannada                            │
+│    • Odia                               │
+│    • Malayalam                          │
+│    • Punjabi                            │
+│    • Game Mode                          │
+│    • Farm Mode                          │
+│    • ... (up to 15 total)               │
+│                                         │
+│  [✅ Continue]                          │
+└─────────────────────────────────────────┘
+
+SCREEN 4: USER HOME SCREEN
+┌─────────────────────────────────────────┐
+│  🚗 Autopilot                           │
+│  Mode: English ▼     [👤 Profile]       │
+├─────────────────────────────────────────┤
+│                                         │
+│    [● Ready / ● Running]                │
+│                                         │
+│         ┌─────────────┐                 │
+│         │   ▶ START   │                 │
+│         └─────────────┘                 │
+│                                         │
+│         ┌─────────────┐                 │
+│         │   ⏹ STOP    │                 │
+│         └─────────────┘                 │
+│                                         │
+│  📋 Active Mode: English                │
+│  ⏳ Subscription: 3 days left           │
+│                                         │
+│  ┌─────────────────────────────┐        │
+│  │ 🎁 Watch Ads to Extend      │        │
+│  │    [████████░░] 12/20       │        │
+│  │    [ Watch Reward Ad ]      │        │
+│  │    "20 Ads = 1 Day FREE"    │        │
+│  └─────────────────────────────┘        │
+│                                         │
+│  💎 100% FREE — No payments ever        │
+│                                         │
+└─────────────────────────────────────────┘
+│  [Unity Banner Ad]                      │
+└─────────────────────────────────────────┘
+
+HOME SCREEN RULES:
+- If no active subscription → "Watch 20 Ads to Unlock" overlay with blur
+- Start button DISABLED if no scenario loaded or subscription expired
+- Stop button sends Accessibility Service stop command
+- If is_ad_free = true → HIDE all ad UI entirely
+- If lifetime subscription → Show "♾️ Lifetime" golden badge
+
+SCREEN 5: ADMIN DASHBOARD
+┌─────────────────────────────────────────┐
+│  ⚡ ADMIN CONTROL CENTER           🔔   │
+├─────────────────────────────────────────┤
+│  ┌────────┐ ┌────────┐ ┌────────┐     │
+│  │ Users  │ │Scenarios│ │Revenue │     │
+│  │ 1,240  │ │   15   │ │ $420   │     │
+│  └────────┘ └────────┘ └────────┘     │
+├─────────────────────────────────────────┤
+│  [➕ Create New Scenario]               │
+├─────────────────────────────────────────┤
+│  📋 SCENARIO MANAGER                    │
+│  ┌─────────────────────────────────┐    │
+│  │ 🎮 Scenario Name                │    │
+│  │ Status: 🟢 Active / 🔴 Off      │    │
+│  │ [✏️] [🗑️] [📤 Push]             │    │
+│  └─────────────────────────────────┘    │
+├─────────────────────────────────────────┤
+│  👥 USER MANAGEMENT                     │
+│  ┌─────────────────────────────────┐    │
+│  │ user@email.com                  │    │
+│  │ Sub: Active | Ads: 45           │    │
+│  │ [🚫 Ban] [⏳ Grant Sub]         │    │
+│  │ [✨ Ad-Free] [👁️ View]          │    │
+│  └─────────────────────────────────┘    │
+├─────────────────────────────────────────┤
+│  ⚙️ GLOBAL SETTINGS                     │
+│  • Ad Interval: [2] min                 │
+│  • Reward Ads/Day: [20]                 │
+│  • Trial Days: [3]                      │
+└─────────────────────────────────────────┘
+
+SCREEN 6: ADMIN — GRANT SUBSCRIPTION
+┌─────────────────────────────────────────┐
+│  ⏳ Grant Subscription                  │
+│  User: user@example.com                 │
+│                                         │
+│  Select Duration:                       │
+│  [1d] [2d] [3d] [7d] [15d] [30d]      │
+│  [90d] [365d] [♾️ Lifetime]            │
+│                                         │
+│  Note: [________________]               │
+│                                         │
+│  [✅ CONFIRM]                           │
+└─────────────────────────────────────────┘
+
+SCREEN 7: ADMIN — AD-FREE CONTROL
+┌─────────────────────────────────────────┐
+│  ✨ Ad-Free Status                      │
+│  User: user@example.com                 │
+│  Status: [🟢 Ad-Free]                   │
+│                                         │
+│  [✨ Grant Ad-Free Forever]             │
+│  [❌ Remove Ad-Free Status]             │
+│                                         │
+│  Note: Ad-free = ZERO ads. No banners,  │
+│        no interstitials, no rewarded.   │
+└─────────────────────────────────────────┘
+
+SCREEN 8: PROFILE SCREEN
+- Avatar with gradient ring
+- Email display
+- Subscription status with countdown
+- Total ads watched
+- Total clicks performed
+- Ad-Free badge (if applicable)
+- Lifetime badge (if applicable)
+- [Logout] button
+
+================================================================================
+SECTION 8: AUTO CLICKER CORE FUNCTIONALITY
+================================================================================
+
+ACCESSIBILITY SERVICE:
+- Fork from Smart-AutoClicker GitHub repo
+- Service name: AutopilotService
+- Permission: BIND_ACCESSIBILITY_SERVICE
+- Overlay window for floating Start/Stop mini buttons
+- Foreground notification when running
+
+SCENARIO EXECUTION ENGINE:
+- Parse scenario JSON from Supabase
+- Supported actions:
+  • CLICK — x, y, duration
+  • SWIPE — startX, startY, endX, endY, duration
+  • DELAY — milliseconds
+  • CONDITION — image match, color match, text match (OCR)
+  • LOOP — repeat count or infinite
+- Execute via AccessibilityNodeInfo.performAction()
+- Anti-detection: Randomized timing (±50ms jitter), human-like swipe paths
+- Stop: User presses Stop, scenario completes, or error occurs
+
+SCENARIO JSON FORMAT:
+{
+  "version": 1,
+  "name": "English",
+  "actions": [
+    {"type": "click", "x": 540, "y": 1200, "delay_after": 500},
+    {"type": "swipe", "startX": 540, "startY": 1500, "endX": 540, "endY": 800, "duration": 300},
+    {"type": "condition", "condition_type": "image_match", "image_hash": "abc123", "timeout": 5000, "if_true": [...], "if_false": [...]},
+    {"type": "loop", "count": 10, "actions": [...]}
+  ]
+}
+
+================================================================================
+SECTION 9: UNITY ADS — HARD AD SYSTEM (100% FREE, NO PAYMENTS)
+================================================================================
+
+⛔ NO PREMIUM PLANS — NO PAID SUBSCRIPTIONS — NO IN-APP PURCHASES — NO BILLING
+
+The app is completely free. ZERO paid options exist.
+Ways to unlock subscription time:
+1. Watch 20 reward ads = 1 day subscription
+2. Admin manually grants subscription
+3. Free trial period (default 3 days)
+
+AD TYPES:
+
+1. FLOATING WINDOW BANNER AD
+   - Placement: Bottom-right overlay during active click session
+   - Behavior: Always visible, non-closable
+   - Size: 320x50 or adaptive
+   - Refresh: Every 30 seconds
+   - HIDDEN if user is_ad_free = true
+
+2. IN-APP BANNER AD
+   - Placement: Bottom of every screen
+   - Size: Adaptive banner
+   - Refresh: Every 30 seconds
+   - Non-closable
+   - HIDDEN if user is_ad_free = true
+
+3. INTERSTITIAL AD (SHORT AD)
+   - Trigger: Every 2 minutes of app usage
+   - Additional triggers: App open, screen switch, stop clicker, after reward ad
+   - Frequency cap: Max 1 per 90 seconds (policy compliance)
+   - SKIPPED if user is_ad_free = true
+
+4. REWARDED AD (SUBSCRIPTION EARNER — ONLY WAY FOR USERS)
+   - Placement: Home screen — prominent card
+   - Logic: 1 ad watched → ads_watched_today +1
+   - At 20/20 → Grant 1 day, reset counter, confetti animation
+   - Counter resets daily at 00:00 UTC via Edge Function
+   - Progress bar: "Watch 20 ads to get 1 day FREE"
+   - Daily limit: Max 20 reward ads per day
+   - After 20: "Come back tomorrow for more free days!"
+   - HIDDEN if user is_ad_free = true
+
+UNITY ADS SDK INTEGRATION:
+```kotlin
+UnityAds.initialize(context, "6178983", testMode, listener)
+// Banner
+val bannerView = BannerView(activity, adUnitId, UnityBannerSize(320, 50))
+// Interstitial — show every 2 min via Handler
+// Rewarded — server-side verify before granting
+```
+
+AD EVENT TRACKING:
+- Log every ad event to ad_events table
+- Admin dashboard: impressions, CTR, fill rate, estimated revenue, revenue lost from ad-free users
+
+================================================================================
+SECTION 10: SUBSCRIPTION SYSTEM (100% FREE — NO PAYMENTS)
+================================================================================
+
+SUBSCRIPTION STATES:
+- trial — New user gets 3-day free trial
+- active — Earned via reward ads or admin grant
+- expired — Ended, must watch ads or wait for admin
+- inactive — Never subscribed
+
+ON APP LAUNCH:
+1. Check subscription_expires_at in profiles
+2. If expired and not trial → "Watch 20 Ads to Unlock" full-screen modal
+3. If trial active → "X days left in trial" banner
+4. If active → Full access
+
+ON REWARD AD COMPLETION (20th ad):
+1. Check active subscription
+2. If active → Extend expires_at by 1 day
+3. If expired/inactive → Set expires_at = NOW() + 1 day
+4. Set subscription_status = 'active'
+5. Reset ads_watched_today = 0
+6. Insert into subscriptions (plan_type='reward_ad', duration_days=1)
+7. Show success animation + notification
+
+ADMIN GRANTS SUBSCRIPTION:
+1. Admin selects user → chooses duration
+2. If lifetime → expires_at = '2099-12-31', duration_days = 99999
+3. Else → expires_at = NOW() + duration_days
+4. Set subscription_status = 'active'
+5. Insert into subscriptions (plan_type='admin_granted')
+6. Log in admin_logs
+7. Send push notification to user
+8. If lifetime → Fireworks animation on user's device
+
+ADMIN MAKES USER AD-FREE:
+1. Set profiles.is_ad_free = true
+2. Log in admin_logs
+3. Send push: "✨ You are now ad-free!"
+4. Immediately hide all ad UI
+
+ADMIN REMOVES AD-FREE:
+1. Set profiles.is_ad_free = false
+2. Log in admin_logs
+3. Send push: "Your ad-free status has been removed."
+4. Immediately restore all ad UI
+
+DAILY CRON JOB (Supabase Edge Function):
+1. Reset ads_watched_today = 0 for all users at 00:00 UTC
+2. Check expired subscriptions, update to 'expired'
+3. Send push: "Your subscription expired! Watch 20 ads to renew FREE"
+
+NO GOOGLE PLAY BILLING — NO STRIPE — NO PAYMENTS AT ALL
+
+================================================================================
+SECTION 11: REAL-TIME SYNCHRONIZATION
+================================================================================
+
+SUPABASE REALTIME CHANNELS:
+
+Channel: scenarios
+- Admin publishes → Users receive INSERT/UPDATE event
+- User app auto-downloads scenario JSON to Room DB
+- Notification: "New scenario available: [Name]"
+
+Channel: user_scenarios
+- Admin assigns → User receives push notification
+- User app fetches and enables scenario
+
+Channel: profiles
+- Admin updates subscription or ad-free → User receives instant update
+- App reflects changes immediately (hide/show ads, update badges)
+
+Channel: app_settings
+- Admin changes settings → All users update instantly
+
+OFFLINE SUPPORT:
+- Scenarios cached in Room Database
+- If offline, use last downloaded scenario
+- Sync queue for ad events and click sessions
+- Subscription status cached, refreshed every app launch and every 5 minutes
+
+================================================================================
+SECTION 12: SECURITY & ANTI-CHEAT
+================================================================================
+
+STRICT ADMIN VERIFICATION:
+- Admin email aalamdiwan555@gmail.com seeded as first admin
+- Admin endpoints protected by Supabase Edge Function with JWT
+- Admin actions logged in admin_logs
+- Admin cannot be demoted by other admins
+
+USER ANTI-CHEAT:
+- Reward ad completion verified server-side via Unity Ads callback
+- Max 20 reward ads/day, device fingerprinting
+- Click session data sent for anomaly detection
+- Ban users with suspicious patterns
+- Local data modifications overwritten by server on next sync
+
+API SECURITY:
+- All Supabase calls use Row Level Security
+- Service role key ONLY in Edge Functions, NEVER in client
+- JWKS URL: https://rhwpbnzbevufolojjimh.supabase.co/auth/v1/.well-known/jwks.json
+
+================================================================================
+SECTION 13: NOTIFICATION SYSTEM
+================================================================================
+
+PUSH NOTIFICATIONS (Firebase Cloud Messaging + Supabase):
+- New scenario published → "New mode available!"
+- Subscription expiring → "Expires in 24h — watch ads to renew!"
+- Subscription expired → "Renew FREE by watching 20 reward ads!"
+- Daily reward reset → "Your 20 free ads are ready!"
+- Admin grants subscription → "🎉 Admin granted you X days!"
+- Admin makes ad-free → "✨ You are now ad-free!"
+- Admin removes ad-free → "Your ad-free status removed."
+- Admin broadcast → Custom message to all users
+
+IN-APP NOTIFICATIONS:
+- Toast messages with custom animated UI
+- Snackbar for non-critical info
+- Full-screen modal for subscription prompts
+
+================================================================================
+SECTION 14: ANALYTICS & ADMIN REPORTS
+================================================================================
+
+USER ANALYTICS:
+- Total registered users with growth chart
+- Active users (today/week/month)
+- Subscription breakdown: Trial / Ad-Earned / Admin-Granted / Expired
+- Ad-free users count
+- Lifetime subscribers count
+- Average session duration
+- Total clicks performed globally
+- Top performing scenarios
+
+REVENUE ANALYTICS:
+- Estimated ad revenue (impressions × eCPM)
+- Ad fill rates and errors
+- Revenue lost from ad-free users
+- Revenue per active user
+
+ADMIN ACTION LOGS:
+- Filterable table of all admin actions
+- Search by admin, user, action type, date range
+- Export to CSV
+
+DEVICE ANALYTICS:
+- Android version distribution
+- Device model distribution
+- Country/Region breakdown
+
+================================================================================
+SECTION 15: TECH STACK
+================================================================================
+
+| Layer              | Technology                              |
+|--------------------|-----------------------------------------|
+| Language           | Kotlin                                  |
+| UI Framework       | Jetpack Compose                         |
+| Architecture       | MVVM + Clean Architecture               |
+| Dependency Injection| Hilt                                   |
+| Backend            | Supabase (Auth, DB, Realtime, Edge)     |
+| Local DB           | Room                                    |
+| Networking         | Ktor Client + Supabase Kotlin SDK       |
+| Ads                | Unity Ads SDK                           |
+| Notifications      | Firebase Cloud Messaging                |
+| Accessibility      | Android AccessibilityService            |
+| Overlay            | WindowManager TYPE_APPLICATION_OVERLAY  |
+| Animations         | Lottie, Compose Animation APIs          |
+| Image Loading      | Coil                                    |
+| JSON               | Kotlinx Serialization                   |
+
+================================================================================
+SECTION 16: PROJECT STRUCTURE
+================================================================================
+
+app/
+├── data/
+│   ├── local/           # Room Entities, DAOs, Database
+│   ├── remote/          # Supabase API, DTOs, Mappers
+│   ├── repository/      # Repository Implementations
+│   └── model/           # Domain Models
+├── domain/
+│   ├── model/           # Domain Models (pure Kotlin)
+│   ├── repository/      # Repository Interfaces
+│   └── usecase/         # Use Cases
+├── presentation/
+│   ├── common/          # Shared UI components, theme, animations
+│   ├── auth/            # Login, Register, OTP screens
+│   ├── user/            # User Home, Profile, Select Mode
+│   ├── admin/           # Admin Dashboard, Scenario Creator, User Management
+│   └── viewmodel/       # ViewModels
+├── service/
+│   ├── AutopilotService.kt        # Accessibility Service
+│   ├── FloatingWindowService.kt   # Floating banner & controls
+│   └── OverlayManager.kt          # Overlay permission & window management
+├── ads/
+│   ├── UnityAdsManager.kt         # Unity Ads init & loading
+│   ├── BannerAdManager.kt         # Banner ad logic (checks is_ad_free)
+│   ├── InterstitialManager.kt     # Interstitial timing (checks is_ad_free)
+│   └── RewardedAdManager.kt       # Reward ad + subscription logic
+├── di/
+│   └── AppModule.kt               # Hilt modules
+└── util/
+    ├── SecurityUtils.kt           # JWT, encryption helpers
+    ├── Constants.kt               # Supabase keys, Unity IDs
+    └── Extensions.kt              # Kotlin extensions
+
+================================================================================
+SECTION 17: BUILD REQUIREMENTS
+================================================================================
+
+GRADLE DEPENDENCIES:
+// Supabase
+implementation("io.github.jan-tennert.supabase:postgrest-kt:2.x.x")
+implementation("io.github.jan-tennert.supabase:auth-kt:2.x.x")
+implementation("io.github.jan-tennert.supabase:realtime-kt:2.x.x")
+implementation("io.github.jan-tennert.supabase:storage-kt:2.x.x")
+
+// Compose
+implementation(platform("androidx.compose:compose-bom:2024.x.x"))
+implementation("androidx.compose.ui:ui")
+implementation("androidx.compose.material3:material3")
+implementation("androidx.navigation:navigation-compose:2.x.x")
+
+// Hilt
+implementation("com.google.dagger:hilt-android:2.x.x")
+kapt("com.google.dagger:hilt-compiler:2.x.x")
+implementation("androidx.hilt:hilt-navigation-compose:1.x.x")
+
+// Room
+implementation("androidx.room:room-runtime:2.x.x")
+kapt("androidx.room:room-compiler:2.x.x")
+implementation("androidx.room:room-ktx:2.x.x")
+
+// Unity Ads
+implementation("com.unity3d.ads:unity-ads:4.x.x")
+
+// Lottie
+implementation("com.airbnb.android:lottie-compose:6.x.x")
+
+// Coil
+implementation("io.coil-kt:coil-compose:2.x.x")
+
+// Ktor
+implementation("io.ktor:ktor-client-android:2.x.x")
+
+// DataStore
+implementation("androidx.datastore:datastore-preferences:1.x.x")
+
+// Firebase
+implementation(platform("com.google.firebase:firebase-bom:32.x.x"))
+implementation("com.google.firebase:firebase-messaging-ktx")
+
+ANDROIDMANIFEST.XML PERMISSIONS:
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+<service
+    android:name=".service.AutopilotService"
+    android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="android.accessibilityservice.AccessibilityService" />
+    </intent-filter>
+    <meta-data
+        android:name="android.accessibilityservice"
+        android:resource="@xml/accessibility_service_config" />
+</service>
+
+<service android:name=".service.FloatingWindowService"
+    android:foregroundServiceType="specialUse" />
+
+================================================================================
+SECTION 18: TESTING STRATEGY
+================================================================================
+
+- Unit Tests: ViewModels, UseCases, Repositories (MockK + JUnit)
+- UI Tests: Compose UI tests (Espresso/Compose Test)
+- Integration Tests: Supabase connection, Ad loading
+- Accessibility Tests: Verify click injection on test apps
+- Admin Tests: Verify grant subscriptions and toggle ad-free
+
+================================================================================
+SECTION 19: IMPLEMENTATION CHECKLIST
+================================================================================
+
+PHASE 1: FOUNDATION
+[ ] Fork Smart-AutoClicker repo
+[ ] Set up Jetpack Compose project with package com.autopilot.driver
+[ ] Integrate Hilt DI
+[ ] Configure Supabase client with provided credentials
+[ ] Set up Room database with all entities
+[ ] Implement Supabase Auth (Email, Google OAuth)
+[ ] Create base UI theme with animations
+
+PHASE 2: CORE AUTO CLICKER
+[ ] Port Accessibility Service from Smart-AutoClicker → rename to AutopilotService
+[ ] Implement scenario parser and execution engine
+[ ] Create floating window overlay service
+[ ] Build Start/Stop functionality
+[ ] Test click injection on sample apps
+
+PHASE 3: ADMIN SYSTEM
+[ ] Build Admin Dashboard UI
+[ ] Create Scenario Builder with visual editor
+[ ] Implement scenario CRUD with Supabase
+[ ] Set up Realtime subscriptions for scenario sync
+[ ] Build User Management screen
+[ ] Implement "Grant Subscription" modal with duration picker
+[ ] Implement "Ad-Free Control" toggle per user
+[ ] Implement global settings editor
+
+PHASE 4: SCENARIO SELECTOR (MODE SYSTEM)
+[ ] Add selected_scenario_id and selected_scenario_name to profiles
+[ ] Build "Select Mode" screen on first login
+[ ] Build scenario name dropdown on home screen header
+[ ] Fetch scenarios list from Supabase
+[ ] Download selected scenario JSON to Room
+[ ] Realtime sync for scenario updates
+[ ] Handle scenario deletion (auto-fallback)
+[ ] Cache scenario list offline
+[ ] Enforce max 15 scenarios in admin UI
+
+PHASE 5: HARD AD SYSTEM (100% FREE)
+[ ] Integrate Unity Ads SDK with Game IDs
+[ ] Implement Floating Window Banner
+[ ] Implement In-App Banner
+[ ] Implement Interstitial (every 2 min)
+[ ] Implement Rewarded Ads (20 ads = 1 day)
+[ ] Implement is_ad_free check — hide ALL ads if true
+[ ] Build subscription status UI (no payment screens)
+
+PHASE 6: POLISH
+[ ] Add Lottie animations throughout
+[ ] Implement push notifications
+[ ] Add offline support with sync queue
+[ ] Implement analytics and admin reports
+[ ] Security audit and anti-cheat measures
+[ ] Beta testing and bug fixes
+
+================================================================================
+SECTION 20: CRITICAL RULES & CONSTRAINTS
+================================================================================
+
+1. THIS IS AN ANDROID APP — NOT A WEBSITE, NOT A WEB APP, NOT A PWA
+2. NEVER expose SUPABASE_SECRET_KEY in client code — Edge Functions only
+3. Admin email aalamdiwan555@gmail.com MUST be seeded as admin on first run
+4. Unity Ads Game IDs: Android=6178983, iOS=6178982, Org=13469908655812
+5. User MUST NOT be able to modify scenarios — read-only from server
+6. Interstitial ads MUST NOT show more than once per 90 seconds
+7. Accessibility Service MUST declare purpose honestly in Play Store
+8. All ad events MUST be logged to Supabase
+9. Subscription status MUST be checked on EVERY app launch AND every 5 minutes
+10. Scenarios MUST sync in real-time within 3 seconds
+11. Reward ad fraud MUST be prevented — server-side verification mandatory
+12. NO PAID SUBSCRIPTIONS — NO BILLING — NO PREMIUM TIERS — 100% FREE
+13. Admin MUST be able to make any user ad-free instantly
+14. Admin MUST be able to grant any subscription duration from 1 day to lifetime
+15. If user is ad-free, ALL ad UI and ad loading MUST be completely skipped
+16. Lifetime subscription = expires_at set to 2099-12-31
+17. App name MUST be "Autopilot" everywhere
+18. Package name MUST be com.autopilot.driver
+19. Max 15 scenarios — enforce in admin UI
+20. Scenario name IS the "Mode" selector — user picks by name
+
+================================================================================
+SECTION 21: SUCCESS METRICS
+================================================================================
+
+- User opens app → sees Start/Stop within 2 seconds
+- Admin publishes scenario → reaches user device within 3 seconds
+- Admin grants subscription → user receives within 3 seconds
+- Admin makes ad-free → ads disappear instantly
+- Ad load time < 2 seconds for all formats
+- App crash rate < 1%
+- Average ads watched per user > 10/day
+
+================================================================================
+END OF FINAL MASTER PROMPT
+================================================================================
+
+Generated for: aalamdiwan555@gmail.com
+Project: Autopilot — Android AutoClicker with Admin Control
+Package: com.autopilot.driver
+Backend: Supabase | Ads: Unity Ads | Platform: Android (Kotlin + Compose)
+100% Free — Hard Ads — Scenario Mode Selector — Admin Controlled
