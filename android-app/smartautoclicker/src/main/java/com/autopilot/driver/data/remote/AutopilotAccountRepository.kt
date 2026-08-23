@@ -52,6 +52,10 @@ class AutopilotAccountRepository(
         client.selectScenario(accessToken, userId, mode)
     }
 
+    suspend fun requestPasswordReset(email: String) {
+        client.requestPasswordReset(email.trim())
+    }
+
     fun signOut() = sessionStore.clear()
 
     private suspend fun loadAccount(session: AuthSession): AuthResult {

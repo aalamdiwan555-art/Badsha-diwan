@@ -81,6 +81,16 @@ class SupabaseRestClient(
             )
         }
 
+    suspend fun requestPasswordReset(email: String) =
+        withContext(Dispatchers.IO) {
+            request(
+                method = "POST",
+                path = SupabaseConfig.AUTH_PASSWORD_RESET_PATH,
+                body = JSONObject().put("email", email).toString(),
+                accessToken = null,
+            )
+        }
+
     suspend fun fetchProfile(accessToken: String, userId: String): UserProfile? =
         withContext(Dispatchers.IO) {
             val rows = JSONArray(

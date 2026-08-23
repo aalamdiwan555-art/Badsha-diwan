@@ -521,3 +521,14 @@ DETAILS:
   - Expired saved access tokens trigger one refresh request
   - Refreshed credentials replace the old local session
   - Existing user identity is preserved when the refresh response omits profile details
+
+--- CHECKPOINT 33: Password Recovery Added ---
+DATE: 2026-08-23
+WHAT: Added a real password-reset request flow to the Android authentication screen
+WHY: Users need a safe way to recover access without contacting the administrator
+WHERE: Supabase REST client, account repository, welcome activity, auth layout and strings
+DETAILS:
+  - Added the Supabase Auth recovery endpoint using the publishable client key only
+  - Added a Forgot password action that validates the email field and shows progress
+  - Uses a non-enumerating success message so the UI does not reveal whether an email exists
+  - Reset failures use the existing safe Supabase error parsing path

@@ -73,6 +73,15 @@
             android:text="@string/switch_to_sign_up"
             android:textColor="#00F0FF" />
 
+        <Button
+            android:id="@+id/auth_reset_password"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/forgot_password"
+            android:textColor="#B829F7" />
+
         <TextView
             android:id="@+id/auth_status"
             android:layout_width="match_parent"

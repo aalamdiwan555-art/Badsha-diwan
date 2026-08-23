@@ -28,6 +28,7 @@ class AutopilotWelcomeActivity : ComponentActivity() {
     private lateinit var passwordInput: EditText
     private lateinit var actionButton: Button
     private lateinit var switchModeButton: Button
+    private lateinit var resetPasswordButton: Button
     private lateinit var statusText: TextView
     private var isSignUp = false
 
@@ -46,9 +47,11 @@ class AutopilotWelcomeActivity : ComponentActivity() {
         passwordInput = findViewById(R.id.password_input)
         actionButton = findViewById(R.id.auth_action)
         switchModeButton = findViewById(R.id.auth_mode_switch)
+        resetPasswordButton = findViewById(R.id.auth_reset_password)
         statusText = findViewById(R.id.auth_status)
 
         actionButton.setOnClickListener { authenticate() }
+        resetPasswordButton.setOnClickListener { requestPasswordReset() }
         switchModeButton.setOnClickListener {
             isSignUp = !isSignUp
             updateMode()
@@ -106,6 +109,28 @@ class AutopilotWelcomeActivity : ComponentActivity() {
         finish()
     }
 
+    private fun requestPasswordReset() {
+        val email = emailInput.text.toString().trim()
+        if (email.isBlank()) {
+            showStatus(getString(R.string.auth_reset_email_required))
+            emailInput.requestFocus()
+            return
+        }
+
+        setLoading(true)
+        lifecycleScope.launch {
+            runCatching { accountRepository.requestPasswordReset(email) }
+                .onSuccess {
+                    setLoading(false)
+                    showStatus(getString(R.string.auth_reset_sent))
+                }
+                .onFailure {
+                    setLoading(false)
+                    showStatus(it.message ?: getString(R.string.auth_generic_error))
+                }
+        }
+    }
+
     private fun updateMode() {
         actionButton.setText(if (isSignUp) R.string.create_account else R.string.sign_in)
         switchModeButton.setText(
@@ -117,6 +142,7 @@ class AutopilotWelcomeActivity : ComponentActivity() {
         emailInput.isEnabled = !loading
         passwordInput.isEnabled = !loading
         switchModeButton.isEnabled = !loading
+        resetPasswordButton.isEnabled = !loading
         actionButton.isEnabled = !loading
         actionButton.text = if (loading) getString(R.string.auth_loading)
         else if (isSignUp) getString(R.string.create_account) else getString(R.string.sign_in)

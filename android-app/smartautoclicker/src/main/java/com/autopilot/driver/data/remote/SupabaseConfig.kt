@@ -13,6 +13,7 @@ object SupabaseConfig {
     const val AUTH_TOKEN_PATH = "/auth/v1/token?grant_type=password"
     const val AUTH_REFRESH_PATH = "/auth/v1/token?grant_type=refresh_token"
     const val AUTH_SIGN_UP_PATH = "/auth/v1/signup"
+    const val AUTH_PASSWORD_RESET_PATH = "/auth/v1/recover"
     const val SCENARIOS_PATH =
         "/rest/v1/scenarios?select=*&is_active=eq.true&order=created_at.asc"
 
