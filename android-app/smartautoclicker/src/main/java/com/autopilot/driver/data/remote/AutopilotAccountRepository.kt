@@ -107,7 +107,10 @@ class AutopilotAccountRepository(
         return client.fetchProfiles(accessToken)
     }
 
-    fun signOut() = sessionStore.clear()
+    fun signOut() {
+        modeCache.clear()
+        sessionStore.clear()
+    }
 
     private suspend fun loadAccount(session: AuthSession): AuthResult {
         val accessToken = session.accessToken
@@ -123,9 +126,25 @@ class AutopilotAccountRepository(
         }.getOrElse {
             modeCache.loadModes()
         }
+        val selectedMode = availableModes.firstOrNull { it.id == profile.selectedScenarioId }
+            ?: availableModes.firstOrNull()
+        val normalizedProfile = if (
+            selectedMode != null &&
+            (profile.selectedScenarioId != selectedMode.id ||
+                profile.selectedScenarioName != selectedMode.name)
+        ) {
+            client.selectScenario(accessToken, userId, selectedMode)
+            modeCache.saveSelectedMode(selectedMode)
+            profile.copy(
+                selectedScenarioId = selectedMode.id,
+                selectedScenarioName = selectedMode.name,
+            )
+        } else {
+            profile
+        }
         return AuthResult.Authenticated(
             session = session,
-            profile = profile,
+            profile = normalizedProfile,
             availableModes = availableModes,
         )
     }

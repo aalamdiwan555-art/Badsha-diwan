@@ -56,6 +56,10 @@ class AutopilotModeCache(private val context: Context) {
             .apply()
     }
 
+    fun clear() {
+        preferences.edit().clear().apply()
+    }
+
     private val preferences
         get() = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
 

@@ -224,16 +224,23 @@ class AdminDashboardActivity : ComponentActivity() {
     }
 
     private fun deleteMode(id: String, name: String) {
-        lifecycleScope.launch {
-            runCatching { accountRepository.deleteScenario(id) }
-                .onSuccess {
-                    statusText.text = getString(R.string.admin_mode_deleted, name)
-                    loadDashboard()
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.admin_delete_mode_title, name))
+            .setMessage(R.string.admin_delete_mode_message)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.admin_delete) { _, _ ->
+                lifecycleScope.launch {
+                    runCatching { accountRepository.deleteScenario(id) }
+                        .onSuccess {
+                            statusText.text = getString(R.string.admin_mode_deleted, name)
+                            loadDashboard()
+                        }
+                        .onFailure {
+                            statusText.text = it.message ?: getString(R.string.auth_generic_error)
+                        }
                 }
-                .onFailure {
-                    statusText.text = it.message ?: getString(R.string.auth_generic_error)
-                }
-        }
+            }
+            .show()
     }
 
     private fun editMode(mode: com.autopilot.driver.data.remote.ScenarioMode) {
