@@ -1,1 +1,2 @@
 - [GitHub secret protection](github-secret-protection.md) — rejected secret-bearing commits must be removed from reachable history before pushing again.
+- [Android build environment](android-build-environment.md) — native builds require a compatible JDK and Android SDK; the workspace currently lacks the SDK.
