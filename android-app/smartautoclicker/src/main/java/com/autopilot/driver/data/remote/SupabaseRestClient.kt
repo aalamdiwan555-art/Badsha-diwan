@@ -161,9 +161,16 @@ class SupabaseRestClient(
         connection.disconnect()
 
         if (status !in 200..299) {
-            val message = runCatching { JSONObject(responseText).optString("msg") }
-                .getOrNull()
-                ?.takeIf { it.isNotBlank() }
+            val message = runCatching {
+                JSONObject(responseText).let { body ->
+                    sequenceOf(
+                        body.optString("msg"),
+                        body.optString("error_description"),
+                        body.optString("message"),
+                        body.optString("error"),
+                    ).firstOrNull { it.isNotBlank() }
+                }
+            }.getOrNull()?.takeIf { it.isNotBlank() }
                 ?: "Supabase request failed with HTTP $status"
             throw IOException(message)
         }

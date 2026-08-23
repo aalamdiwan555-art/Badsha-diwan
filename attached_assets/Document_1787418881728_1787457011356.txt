@@ -511,3 +511,13 @@ DETAILS:
   - Retry is shown when loading fails or no modes are currently published
   - Retrying clears stale mode buttons before fetching fresh data
   - Loading state and retry visibility are updated consistently
+
+--- CHECKPOINT 31: Remote Error Messages Improved ---
+DATE: 2026-08-23
+WHAT: Improved Supabase REST error parsing
+WHY: Users and support need actionable feedback when authentication or profile requests fail
+WHERE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/data/remote/SupabaseRestClient.kt
+DETAILS:
+  - Reads common Supabase error fields in priority order
+  - Preserves a safe HTTP fallback when the response has no useful message
+  - Keeps credentials and response tokens out of user-facing errors
