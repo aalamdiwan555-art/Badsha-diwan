@@ -1,6 +1,7 @@
 package com.autopilot.driver.home
 
 import android.content.Intent
+import android.provider.Settings
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -90,6 +91,7 @@ class AutopilotHomeActivity : ComponentActivity() {
         findViewById<Button>(R.id.home_stop).setOnClickListener {
             serviceConnection.getLocalService()?.stopScenario()
             finishClickSession()
+            stopService(Intent(this, com.autopilot.driver.service.AutopilotFloatingBannerService::class.java))
             statusText.setText(R.string.home_stop_status)
         }
         findViewById<Button>(R.id.home_switch_mode).setOnClickListener {
@@ -282,6 +284,16 @@ class AutopilotHomeActivity : ComponentActivity() {
                     activeClickSessionId = runCatching {
                         accountRepository.startClickSession(mode.id)
                     }.getOrNull()
+                    if (Settings.canDrawOverlays(this@AutopilotHomeActivity)) {
+                        startService(
+                            Intent(
+                                this@AutopilotHomeActivity,
+                                com.autopilot.driver.service.AutopilotFloatingBannerService::class.java,
+                            ),
+                        )
+                    } else {
+                        statusText.setText(R.string.home_overlay_permission_required)
+                    }
                     startActivity(
                         Intent(this@AutopilotHomeActivity, ScenarioActivity::class.java)
                             .putExtra(ScenarioActivity.EXTRA_AUTOPILOT_SCENARIO_NAME, localScenarioName),
