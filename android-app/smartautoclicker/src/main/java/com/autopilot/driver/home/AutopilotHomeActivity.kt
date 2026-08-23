@@ -12,9 +12,7 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.auth.ModeSelectionActivity
-import com.autopilot.driver.ads.BannerAdController
-import com.autopilot.driver.ads.InterstitialAdController
-import com.autopilot.driver.ads.RewardAdController
+import com.autopilot.driver.ads.AutopilotAdsManager
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
 import com.autopilot.driver.data.remote.AutopilotSessionStore
 import com.autopilot.driver.data.remote.AuthResult
@@ -28,6 +26,9 @@ import com.buzbuz.smartautoclicker.core.dumb.domain.IDumbRepository
 import com.buzbuz.smartautoclicker.scenarios.ScenarioActivity
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.time.Instant
 
@@ -51,15 +52,14 @@ class AutopilotHomeActivity : ComponentActivity() {
     private lateinit var rewardButton: Button
     private lateinit var rewardProgress: TextView
     private lateinit var bannerContainer: FrameLayout
-    private val rewardAdController = RewardAdController()
-    private val interstitialAdController = InterstitialAdController()
-    private val bannerAdController = BannerAdController()
+    private val adsManager = AutopilotAdsManager()
     private var hasActiveAccess = false
     private var hasLoadedProfile = false
     private var selectedMode: ScenarioMode? = null
     private var rewardAdsForOneDay = 20
     private var profileRequestInFlight = false
     private var activeClickSessionId: String? = null
+    private val sessionCleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val refreshHandler = Handler(Looper.getMainLooper())
     private val refreshProfile = object : Runnable {
         override fun run() {
@@ -117,7 +117,8 @@ class AutopilotHomeActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        bannerAdController.destroy(bannerContainer)
+        refreshHandler.removeCallbacks(refreshProfile)
+        adsManager.destroyBanner(bannerContainer)
         finishClickSession()
         stopService(Intent(this, com.autopilot.driver.service.AutopilotFloatingBannerService::class.java))
         super.onDestroy()
@@ -165,9 +166,9 @@ class AutopilotHomeActivity : ComponentActivity() {
                                 View.VISIBLE
                             }
                             if (result.profile.isAdFree) {
-                                bannerAdController.hide(bannerContainer)
+                                adsManager.hideBanner(bannerContainer)
                             } else {
-                                bannerAdController.show(
+                                adsManager.showBanner(
                                     activity = this@AutopilotHomeActivity,
                                     container = bannerContainer,
                                     isAdFree = false,
@@ -221,7 +222,7 @@ class AutopilotHomeActivity : ComponentActivity() {
         if (!hasLoadedProfile) return
         rewardButton.isEnabled = false
         statusText.setText(R.string.home_reward_loading)
-        rewardAdController.show(
+        adsManager.showReward(
             activity = this,
             onStarted = {
                 lifecycleScope.launch {
@@ -311,7 +312,7 @@ class AutopilotHomeActivity : ComponentActivity() {
     private fun finishClickSession() {
         val sessionId = activeClickSessionId ?: return
         activeClickSessionId = null
-        lifecycleScope.launch {
+        sessionCleanupScope.launch {
             runCatching { accountRepository.finishClickSession(sessionId) }
         }
     }
