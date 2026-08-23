@@ -618,3 +618,14 @@ DETAILS:
   - Refreshes the cache after successful Supabase mode reads and falls back to it when a read fails
   - Persists the selected mode after a successful server update
   - Clears the local session and blocks navigation when the server marks an account as banned
+
+--- CHECKPOINT 42: Server-Enforced Mode Limits Added ---
+DATE: 2026-08-23
+WHAT: Added database enforcement for active mode limits, valid names, and bounded JSON depth
+WHY: Client-side limits can be bypassed by direct API calls, and deeply nested payloads are unsafe to process
+WHERE: Supabase scenario trigger and Android ScenarioValidator
+DETAILS:
+  - Rejects blank or overlong scenario names and non-object scenario payloads
+  - Enforces a maximum of 15 active scenarios at the database boundary
+  - Rejects duplicate active mode names case-insensitively
+  - Rejects scenario JSON nested beyond the supported depth
