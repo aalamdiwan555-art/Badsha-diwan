@@ -40,6 +40,15 @@
     <string name="admin_loading">Checking administrator access…</string>
     <string name="admin_read_only_status">Administrator access verified. Mode mutations stay server-authorized.</string>
     <string name="admin_refresh">Refresh modes</string>
+    <string name="admin_mode_name_hint">Mode name</string>
+    <string name="admin_mode_description_hint">Description (optional)</string>
+    <string name="admin_create_mode">Publish mode</string>
+    <string name="admin_delete">Delete</string>
+    <string name="admin_name_required">Enter a mode name first.</string>
+    <string name="admin_access_required">Administrator access is required.</string>
+    <string name="admin_mode_limit">You can publish up to 15 modes.</string>
+    <string name="admin_mode_created">Mode published.</string>
+    <string name="admin_mode_deleted">Deleted %1$s.</string>
     <string name="mode_title">Choose your Mode</string>
     <string name="mode_subtitle">Select an administrator-published mode to continue.</string>
     <string name="mode_loading">Loading available modes…</string>

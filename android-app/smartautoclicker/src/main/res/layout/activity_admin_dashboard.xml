@@ -27,6 +27,33 @@
             android:textColor="#00F0FF"
             android:textSize="20sp" />
 
+        <EditText
+            android:id="@+id/admin_mode_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:hint="@string/admin_mode_name_hint"
+            android:inputType="textCapSentences"
+            android:textColor="@android:color/white"
+            android:textColorHint="#91A0B5" />
+
+        <EditText
+            android:id="@+id/admin_mode_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="@string/admin_mode_description_hint"
+            android:inputType="textCapSentences|textMultiLine"
+            android:textColor="@android:color/white"
+            android:textColorHint="#91A0B5" />
+
+        <Button
+            android:id="@+id/admin_create_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/admin_create_mode" />
+
         <LinearLayout
             android:id="@+id/admin_mode_list"
             android:layout_width="match_parent"

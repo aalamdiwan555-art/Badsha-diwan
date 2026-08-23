@@ -56,6 +56,20 @@ class AutopilotAccountRepository(
         client.requestPasswordReset(email.trim())
     }
 
+    suspend fun createScenario(name: String, description: String?) {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot create a mode without an authenticated session")
+        val adminId = sessionStore.userId
+            ?: error("Cannot create a mode without an authenticated user")
+        client.createScenario(accessToken, adminId, name.trim(), description?.trim())
+    }
+
+    suspend fun deleteScenario(scenarioId: String) {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot delete a mode without an authenticated session")
+        client.deleteScenario(accessToken, scenarioId)
+    }
+
     fun signOut() = sessionStore.clear()
 
     private suspend fun loadAccount(session: AuthSession): AuthResult {

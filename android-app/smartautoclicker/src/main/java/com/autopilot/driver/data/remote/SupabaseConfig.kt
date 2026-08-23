@@ -16,10 +16,14 @@ object SupabaseConfig {
     const val AUTH_PASSWORD_RESET_PATH = "/auth/v1/recover"
     const val SCENARIOS_PATH =
         "/rest/v1/scenarios?select=*&is_active=eq.true&order=created_at.asc"
+    const val SCENARIOS_TABLE_PATH = "/rest/v1/scenarios"
 
     fun profilePath(userId: String): String =
         "/rest/v1/profiles?select=*&id=eq.$userId"
 
     fun updateProfilePath(userId: String): String =
         "/rest/v1/profiles?id=eq.$userId"
+
+    fun scenarioPath(scenarioId: String): String =
+        "$SCENARIOS_TABLE_PATH?id=eq.$scenarioId"
 }

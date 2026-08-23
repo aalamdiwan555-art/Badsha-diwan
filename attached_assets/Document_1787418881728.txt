@@ -543,3 +543,15 @@ DETAILS:
   - Regular users continue to the restricted mode and Start/Stop experience
   - The dashboard verifies the role again when it loads
   - Administrator mode data is read-only until secure server-authorized mutation endpoints are added
+
+--- CHECKPOINT 35: Administrator Mode CRUD Added ---
+DATE: 2026-08-23
+WHAT: Added secure administrator create and delete operations for published modes
+WHY: The administrator control center must manage the remote mode list instead of only displaying it
+WHERE: Supabase REST client, account repository, admin dashboard activity/layout and strings
+DETAILS:
+  - Create and delete requests use the signed-in user's access token and Supabase RLS
+  - The dashboard verifies administrator role before creating a mode
+  - Publishing is blocked at 15 active modes
+  - New modes start with an explicit empty action list for the scenario editor follow-up
+  - Regular users continue to receive only active mode data and have no mutation controls

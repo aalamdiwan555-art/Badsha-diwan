@@ -163,11 +163,44 @@ class SupabaseRestClient(
             }
         }
 
+    suspend fun createScenario(
+        accessToken: String,
+        adminId: String,
+        name: String,
+        description: String?,
+    ) = withContext(Dispatchers.IO) {
+        request(
+            method = "POST",
+            path = SupabaseConfig.SCENARIOS_TABLE_PATH,
+            body = JSONObject()
+                .put("admin_id", adminId)
+                .put("name", name)
+                .put("description", description)
+                .put("scenario_data", JSONObject().put("version", 1).put("actions", JSONArray()))
+                .put("is_active", true)
+                .put("is_global", true)
+                .toString(),
+            accessToken = accessToken,
+            extraHeaders = mapOf("Prefer" to "return=minimal"),
+        )
+    }
+
+    suspend fun deleteScenario(accessToken: String, scenarioId: String) =
+        withContext(Dispatchers.IO) {
+            request(
+                method = "DELETE",
+                path = SupabaseConfig.scenarioPath(scenarioId),
+                body = null,
+                accessToken = accessToken,
+            )
+        }
+
     private fun request(
         method: String,
         path: String,
         body: String?,
         accessToken: String?,
+        extraHeaders: Map<String, String> = emptyMap(),
     ): String {
         val connection = (URL(projectUrl + path).openConnection() as HttpURLConnection).apply {
             requestMethod = method
@@ -177,6 +210,7 @@ class SupabaseRestClient(
             setRequestProperty("Content-Type", "application/json")
             setRequestProperty("apikey", publishableKey)
             setRequestProperty("Authorization", "Bearer ${accessToken ?: publishableKey}")
+            extraHeaders.forEach { (key, value) -> setRequestProperty(key, value) }
             doInput = true
             if (body != null) {
                 doOutput = true
