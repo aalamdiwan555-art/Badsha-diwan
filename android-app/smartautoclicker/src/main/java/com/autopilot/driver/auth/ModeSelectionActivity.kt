@@ -47,8 +47,9 @@ class ModeSelectionActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (modeCache.loadModes().isNotEmpty() &&
-            modeCache.loadModes().any { it.id == modeCache.selectedModeId() }
+        val cachedModes = modeCache.loadModes()
+        if (cachedModes.isNotEmpty() &&
+            cachedModes.any { it.id == modeCache.selectedModeId() }
         ) {
             openClicker()
             return
@@ -138,7 +139,9 @@ class ModeSelectionActivity : ComponentActivity() {
     }
 
     private fun openClicker() {
-        startActivity(Intent(this, AutopilotHomeActivity::class.java))
+        startActivity(Intent(this, AutopilotHomeActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        })
         finish()
     }
 }
