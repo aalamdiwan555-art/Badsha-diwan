@@ -49,9 +49,19 @@
     <string name="home_start">Start clicker</string>
     <string name="home_stop">Stop clicker</string>
     <string name="home_switch_mode">Switch Mode</string>
+    <string name="home_profile">View profile</string>
     <string name="home_loading">Loading your Autopilot profile…</string>
     <string name="home_stop_status">Stop requested.</string>
     <string name="home_start_status">Choose a Mode before starting.</string>
+    <string name="profile_title">Your profile</string>
+    <string name="profile_email_label">Signed in as</string>
+    <string name="profile_access_label">Access</string>
+    <string name="profile_ads_today">Reward ads today: %1$d / 20</string>
+    <string name="profile_ad_free">Ad-free access enabled</string>
+    <string name="profile_standard_ads">Standard free access</string>
+    <string name="profile_loading">Loading your profile…</string>
+    <string name="profile_logout">Log out</string>
+    <string name="profile_logout_error">Could not log out. Please try again.</string>
 
     <string name="activity_scenario_title">Scenarios</string>
     <string name="accessibility_service_description">Autopilot uses this service to perform the clicks and gestures you configure in your selected mode. It only runs when you start a session and does not collect content from other apps.</string>

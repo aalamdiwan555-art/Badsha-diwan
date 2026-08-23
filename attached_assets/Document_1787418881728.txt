@@ -458,3 +458,13 @@ DETAILS:
   - Lifetime access is recognized explicitly
   - Expired access now shows a clear message directing users to reward ads or the administrator
   - The home screen identifies Autopilot as 100% free with no payment requirement
+
+--- CHECKPOINT 27: User Profile Flow Added ---
+DATE: 2026-08-23
+WHAT: Added an authenticated profile screen with logout and free-access details
+WHY: Users need to see their account state without exposing administrator controls
+WHERE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/home, app manifest, layouts, strings
+DETAILS:
+  - Profile shows signed-in email, subscription status, daily reward-ad count, and ad-free state
+  - Logout clears the local session and returns to the authentication entry point
+  - Home screen links to the profile without exposing scenario editing or admin actions

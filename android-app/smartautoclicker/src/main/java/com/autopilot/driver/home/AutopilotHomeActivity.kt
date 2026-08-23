@@ -60,6 +60,9 @@ class AutopilotHomeActivity : ComponentActivity() {
         findViewById<Button>(R.id.home_switch_mode).setOnClickListener {
             startActivity(Intent(this, ModeSelectionActivity::class.java))
         }
+        findViewById<Button>(R.id.home_profile).setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+        }
 
         loadProfile()
     }
