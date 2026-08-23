@@ -185,4 +185,6 @@ dependencies {
     implementation(project(":feature:tutorial"))
 
     playStoreImplementation(libs.unity.ads)
+    playStoreImplementation(platform(libs.google.firebase.bom))
+    playStoreImplementation(libs.google.firebase.messaging)
 }
