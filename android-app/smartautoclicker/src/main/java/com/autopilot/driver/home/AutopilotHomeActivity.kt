@@ -104,6 +104,8 @@ class AutopilotHomeActivity : ComponentActivity() {
 
     private fun loadProfile() {
         hasLoadedProfile = false
+        rewardProgress.visibility = View.GONE
+        rewardButton.visibility = View.GONE
         statusText.setText(R.string.home_loading)
         lifecycleScope.launch {
             runCatching { accountRepository.loadSavedAccount() }
