@@ -188,7 +188,7 @@ dependencies {
     implementation(project(":feature:dumb-config"))
     implementation(project(":feature:tutorial"))
 
-    playStoreImplementation(libs.unity.ads)
-    playStoreImplementation(platform(libs.google.firebase.bom))
-    playStoreImplementation(libs.google.firebase.messaging)
+    implementation(libs.unity.ads)
+    implementation(platform(libs.google.firebase.bom))
+    implementation(libs.google.firebase.messaging)
 }
