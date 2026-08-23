@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.auth.AutopilotWelcomeActivity
@@ -116,6 +117,10 @@ class AdminDashboardActivity : ComponentActivity() {
                                 }
                                 addView(label, LinearLayout.LayoutParams(0, -2, 1f))
                                 addView(Button(this@AdminDashboardActivity).apply {
+                                    text = getString(R.string.admin_edit)
+                                    setOnClickListener { editMode(mode) }
+                                })
+                                addView(Button(this@AdminDashboardActivity).apply {
                                     text = getString(R.string.admin_delete)
                                     setOnClickListener { deleteMode(mode.id, mode.name) }
                                 })
@@ -138,6 +143,66 @@ class AdminDashboardActivity : ComponentActivity() {
                 .onFailure {
                     statusText.text = it.message ?: getString(R.string.auth_generic_error)
                 }
+        }
+    }
+
+    private fun editMode(mode: com.autopilot.driver.data.remote.ScenarioMode) {
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(32, 8, 32, 0)
+        }
+        val nameInput = EditText(this).apply {
+            setText(mode.name)
+            hint = getString(R.string.admin_mode_name_hint)
+        }
+        val descriptionInput = EditText(this).apply {
+            setText(mode.description.orEmpty())
+            hint = getString(R.string.admin_mode_description_hint)
+        }
+        val jsonInput = EditText(this).apply {
+            setText(mode.scenarioData.toString(2))
+            hint = getString(R.string.admin_scenario_json_hint)
+            minLines = 8
+            gravity = android.view.Gravity.TOP
+        }
+        content.addView(nameInput)
+        content.addView(descriptionInput)
+        content.addView(jsonInput)
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.admin_edit_mode, mode.name))
+            .setView(content)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.admin_save) { _, _ ->
+                saveMode(mode.id, nameInput.text.toString(), descriptionInput.text.toString(), jsonInput.text.toString())
+            }
+            .show()
+    }
+
+    private fun saveMode(id: String, name: String, description: String, scenarioJson: String) {
+        if (name.trim().isBlank()) {
+            statusText.setText(R.string.admin_name_required)
+            return
+        }
+        val scenarioData = runCatching { org.json.JSONObject(scenarioJson) }.getOrNull()
+        if (scenarioData == null || !scenarioData.has("actions") || scenarioData.optJSONArray("actions") == null) {
+            statusText.setText(R.string.admin_invalid_scenario)
+            return
+        }
+        lifecycleScope.launch {
+            runCatching {
+                accountRepository.updateScenario(
+                    scenarioId = id,
+                    name = name,
+                    description = description.takeIf { it.isNotBlank() },
+                    scenarioData = scenarioData,
+                )
+            }.onSuccess {
+                statusText.setText(R.string.admin_mode_updated)
+                loadDashboard()
+            }.onFailure {
+                statusText.text = it.message ?: getString(R.string.auth_generic_error)
+            }
         }
     }
 

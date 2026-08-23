@@ -555,3 +555,14 @@ DETAILS:
   - Publishing is blocked at 15 active modes
   - New modes start with an explicit empty action list for the scenario editor follow-up
   - Regular users continue to receive only active mode data and have no mutation controls
+
+--- CHECKPOINT 36: Scenario Definition Editing Added ---
+DATE: 2026-08-23
+WHAT: Added administrator editing for mode metadata and scenario action JSON
+WHY: Newly published modes need real click definitions before users can run them
+WHERE: Supabase REST client, account repository, administrator dashboard and strings
+DETAILS:
+  - Admins can open an existing mode and edit its name, description, and scenario JSON
+  - Updates require valid JSON with an actions array before being sent
+  - Version metadata is preserved in the published scenario definition
+  - Update requests remain protected by the signed-in Supabase token and RLS

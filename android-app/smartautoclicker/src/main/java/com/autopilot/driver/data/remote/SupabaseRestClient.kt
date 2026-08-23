@@ -195,6 +195,27 @@ class SupabaseRestClient(
             )
         }
 
+    suspend fun updateScenario(
+        accessToken: String,
+        scenarioId: String,
+        name: String,
+        description: String?,
+        scenarioData: JSONObject,
+    ) = withContext(Dispatchers.IO) {
+        request(
+            method = "PATCH",
+            path = SupabaseConfig.scenarioPath(scenarioId),
+            body = JSONObject()
+                .put("name", name)
+                .put("description", description)
+                .put("scenario_data", scenarioData)
+                .put("version", scenarioData.optInt("version", 1))
+                .toString(),
+            accessToken = accessToken,
+            extraHeaders = mapOf("Prefer" to "return=minimal"),
+        )
+    }
+
     private fun request(
         method: String,
         path: String,

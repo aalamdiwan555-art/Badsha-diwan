@@ -44,6 +44,12 @@
     <string name="admin_mode_description_hint">Description (optional)</string>
     <string name="admin_create_mode">Publish mode</string>
     <string name="admin_delete">Delete</string>
+    <string name="admin_edit">Edit</string>
+    <string name="admin_save">Save</string>
+    <string name="admin_edit_mode">Edit %1$s</string>
+    <string name="admin_scenario_json_hint">Scenario JSON with an actions array</string>
+    <string name="admin_invalid_scenario">Use valid JSON containing an actions array.</string>
+    <string name="admin_mode_updated">Mode updated.</string>
     <string name="admin_name_required">Enter a mode name first.</string>
     <string name="admin_access_required">Administrator access is required.</string>
     <string name="admin_mode_limit">You can publish up to 15 modes.</string>

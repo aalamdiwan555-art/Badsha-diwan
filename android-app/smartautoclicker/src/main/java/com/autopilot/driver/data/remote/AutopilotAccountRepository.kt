@@ -70,6 +70,17 @@ class AutopilotAccountRepository(
         client.deleteScenario(accessToken, scenarioId)
     }
 
+    suspend fun updateScenario(
+        scenarioId: String,
+        name: String,
+        description: String?,
+        scenarioData: org.json.JSONObject,
+    ) {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot update a mode without an authenticated session")
+        client.updateScenario(accessToken, scenarioId, name.trim(), description?.trim(), scenarioData)
+    }
+
     fun signOut() = sessionStore.clear()
 
     private suspend fun loadAccount(session: AuthSession): AuthResult {
