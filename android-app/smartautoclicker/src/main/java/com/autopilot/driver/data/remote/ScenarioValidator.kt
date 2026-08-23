@@ -55,6 +55,8 @@ object ScenarioValidator {
         val value = when {
             action.has(key) -> action.optDouble(key, Double.NaN)
             action.has("duration") -> action.optDouble("duration", Double.NaN)
+            action.has("durationMs") -> action.optDouble("durationMs", Double.NaN)
+            action.has("milliseconds") -> action.optDouble("milliseconds", Double.NaN)
             else -> default.toDouble()
         }
         return value.isFinite() && value in 1.0..MAX_DURATION_MS.toDouble()

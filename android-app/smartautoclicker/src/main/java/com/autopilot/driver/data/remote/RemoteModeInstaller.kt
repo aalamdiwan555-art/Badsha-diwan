@@ -57,12 +57,17 @@ class RemoteModeInstaller(
                             name = name,
                             repeatCount = repeatCount(action),
                             isRepeatInfinite = action.optBoolean("repeat_infinite", false),
-                            repeatDelayMs = duration(action, "repeat_delay_ms", 0L),
+                            repeatDelayMs = delayAfter(action),
                             position = Point(
                                 coordinate(action, "x"),
                                 coordinate(action, "y"),
                             ),
-                            pressDurationMs = duration(action, "press_duration_ms", 50L),
+                            pressDurationMs = duration(
+                                action,
+                                "press_duration_ms",
+                                50L,
+                                "pressDurationMs",
+                            ),
                         ),
                     )
                     "swipe" -> add(
@@ -72,7 +77,7 @@ class RemoteModeInstaller(
                             name = name,
                             repeatCount = repeatCount(action),
                             isRepeatInfinite = action.optBoolean("repeat_infinite", false),
-                            repeatDelayMs = duration(action, "repeat_delay_ms", 0L),
+                            repeatDelayMs = delayAfter(action),
                             fromPosition = Point(
                                 coordinate(action, "from_x", "fromX", "start_x", "startX"),
                                 coordinate(action, "from_y", "fromY", "start_y", "startY"),
@@ -104,11 +109,36 @@ class RemoteModeInstaller(
         return action.getDouble(key).toInt().coerceIn(0, MAX_SCREEN_COORDINATE)
     }
 
-    private fun duration(action: JSONObject, key: String, default: Long): Long =
-        action.optDouble(
-            key,
-            action.optDouble("duration", default.toDouble()),
-        ).toLong().coerceIn(1L, MAX_DURATION_MS)
+    private fun duration(
+        action: JSONObject,
+        key: String,
+        default: Long,
+        vararg aliases: String,
+    ): Long {
+        val value = when {
+            action.has(key) -> action.optDouble(key, default.toDouble())
+            aliases.any(action::has) -> {
+                val alias = aliases.first(action::has)
+                action.optDouble(alias, default.toDouble())
+            }
+            action.has("duration") -> action.optDouble("duration", default.toDouble())
+            action.has("durationMs") -> action.optDouble("durationMs", default.toDouble())
+            action.has("milliseconds") -> action.optDouble("milliseconds", default.toDouble())
+            else -> default.toDouble()
+        }
+        return value.toLong().coerceIn(1L, MAX_DURATION_MS)
+    }
+
+    private fun delayAfter(action: JSONObject): Long {
+        val value = when {
+            action.has("repeat_delay_ms") -> action.optDouble("repeat_delay_ms", 0.0)
+            action.has("repeatDelayMs") -> action.optDouble("repeatDelayMs", 0.0)
+            action.has("delay_after") -> action.optDouble("delay_after", 0.0)
+            action.has("delayAfter") -> action.optDouble("delayAfter", 0.0)
+            else -> 0.0
+        }
+        return value.toLong().coerceIn(0L, MAX_DURATION_MS)
+    }
 
     private fun repeatCount(action: JSONObject): Int =
         action.optInt("repeat_count", 1).coerceIn(1, 99_999)
