@@ -122,6 +122,19 @@ class SupabaseRestClient(
         )
     }
 
+    suspend fun clearSelectedScenario(accessToken: String, userId: String) =
+        withContext(Dispatchers.IO) {
+            request(
+                method = "PATCH",
+                path = SupabaseConfig.updateProfilePath(userId),
+                body = JSONObject()
+                    .put("selected_scenario_id", JSONObject.NULL)
+                    .put("selected_scenario_name", JSONObject.NULL)
+                    .toString(),
+                accessToken = accessToken,
+            )
+        }
+
     suspend fun fetchActiveScenarios(accessToken: String): List<ScenarioMode> =
         withContext(Dispatchers.IO) {
             val rows = JSONArray(

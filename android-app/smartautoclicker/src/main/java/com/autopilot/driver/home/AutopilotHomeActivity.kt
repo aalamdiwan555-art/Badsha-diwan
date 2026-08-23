@@ -113,7 +113,7 @@ class AutopilotHomeActivity : ComponentActivity() {
                             selectedMode = result.availableModes.firstOrNull {
                                 it.id == result.profile.selectedScenarioId
                             }
-                            modeValue.text = result.profile.selectedScenarioName
+                            modeValue.text = selectedMode?.name
                                 ?: getString(R.string.home_no_mode)
                             subscriptionValue.text = result.profile.accessLabel()
                             startButton.isEnabled = hasActiveAccess &&

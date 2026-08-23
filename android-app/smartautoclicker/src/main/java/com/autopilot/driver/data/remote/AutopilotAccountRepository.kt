@@ -145,6 +145,15 @@ class AutopilotAccountRepository(
                 selectedScenarioId = selectedMode.id,
                 selectedScenarioName = selectedMode.name,
             )
+        } else if (selectedMode == null && profile.selectedScenarioId != null) {
+            // A deleted or unpublished mode must not remain selected locally.
+            // Best-effort persistence keeps offline refreshes usable while
+            // ensuring the next online refresh repairs the server profile.
+            runCatching { client.clearSelectedScenario(accessToken, userId) }
+            profile.copy(
+                selectedScenarioId = null,
+                selectedScenarioName = null,
+            )
         } else {
             profile
         }
