@@ -61,6 +61,9 @@ class AutopilotModeCache(private val context: Context) {
             .apply()
     }
 
+    fun selectedModeId(): String? =
+        preferences.getString(KEY_SELECTED_ID, null)
+
     fun clear() {
         preferences.edit().clear().apply()
     }
