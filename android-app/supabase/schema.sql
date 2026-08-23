@@ -22,6 +22,36 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+-- Supabase Auth creates auth.users, but the Android app reads public.profiles.
+-- Bootstrap the profile in the same transaction so registration can continue
+-- without a privileged client-side insert.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, role)
+  values (
+    new.id,
+    lower(trim(coalesce(new.email, ''))),
+    case
+      when lower(trim(coalesce(new.email, ''))) = 'aalamdiwan555@gmail.com'
+        then 'admin'
+      else 'user'
+    end
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
+
 alter table public.profiles add column if not exists is_banned boolean not null default false;
 alter table public.profiles add column if not exists ban_reason text;
 
