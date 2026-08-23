@@ -55,11 +55,15 @@ class ProfileActivity : ComponentActivity() {
                 .onSuccess { result ->
                     when (result) {
                         is AuthResult.Authenticated -> {
+                            val rewardAdsForOneDay = runCatching {
+                                accountRepository.loadAppSettings().rewardAdsForOneDay
+                            }.getOrDefault(20)
                             emailValue.text = result.profile.email
                             accessValue.text = result.profile.subscriptionStatus
                             rewardValue.text = getString(
                                 R.string.profile_ads_today,
                                 result.profile.adsWatchedToday,
+                                rewardAdsForOneDay,
                             )
                             adFreeValue.setText(
                                 if (result.profile.isAdFree) {

@@ -694,3 +694,13 @@ DETAILS:
   - Added an audited administrator RPC for interval, reward threshold, and trial duration
   - Added range validation on both the Android form and the database boundary
   - Added settings loading and saving to the administrator control center
+
+--- CHECKPOINT 47: Reward Threshold Wiring Added ---
+DATE: 2026-08-23
+WHAT: Connected the administrator reward threshold to the user experience
+WHY: Saved global settings must control the actual unlock requirement rather than only appearing in the dashboard
+WHERE: Supabase reward RPC, Android REST client, home screen, profile screen, and strings
+DETAILS:
+  - Reward claims now read the configured threshold inside the atomic server transaction
+  - Home and profile progress displays use the current configured threshold
+  - Reward claim responses return the effective threshold for immediate client refresh

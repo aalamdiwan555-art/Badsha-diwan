@@ -497,6 +497,7 @@ as $$
 declare
   current_profile public.profiles%rowtype;
   watched_today_value integer;
+  required_ads_value integer;
   new_expiry timestamptz;
   unlocked boolean := false;
 begin
@@ -519,6 +520,13 @@ begin
   if current_profile.is_ad_free then
     raise exception 'Reward ads are unavailable for ad-free accounts';
   end if;
+  select reward_ads_for_one_day
+  into required_ads_value
+  from public.app_settings
+  where id = 1;
+  if required_ads_value is null or required_ads_value < 1 then
+    raise exception 'Reward settings are not configured';
+  end if;
 
   -- Counters are scoped to the UTC calendar day, matching the documented
   -- reset schedule and avoiding device-clock manipulation.
@@ -530,13 +538,13 @@ begin
     watched_today_value := greatest(current_profile.ads_watched_today, 0);
   end if;
 
-  if watched_today_value >= 20 then
+  if watched_today_value >= required_ads_value then
     raise exception 'Daily reward limit reached';
   end if;
 
   watched_today_value := watched_today_value + 1;
 
-  if watched_today_value = 20 then
+  if watched_today_value = required_ads_value then
     unlocked := true;
     new_expiry := greatest(
       coalesce(current_profile.subscription_expires_at, now()),
@@ -572,7 +580,8 @@ begin
   return jsonb_build_object(
     'ads_watched_today', case when unlocked then 0 else watched_today_value end,
     'unlocked', unlocked,
-    'subscription_expires_at', new_expiry
+    'subscription_expires_at', new_expiry,
+    'reward_ads_for_one_day', required_ads_value
   );
 end;
 $$;

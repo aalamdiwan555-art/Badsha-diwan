@@ -315,6 +315,7 @@ class SupabaseRestClient(
                 unlocked = response.optBoolean("unlocked", false),
                 subscriptionExpiresAt = response.optString("subscription_expires_at")
                     .takeIf { it.isNotBlank() && it != "null" },
+                rewardAdsForOneDay = response.optInt("reward_ads_for_one_day", 20),
             )
         }
 
@@ -401,6 +402,7 @@ data class RewardAdClaim(
     val adsWatchedToday: Int,
     val unlocked: Boolean,
     val subscriptionExpiresAt: String?,
+    val rewardAdsForOneDay: Int,
 )
 
 data class AppSettings(

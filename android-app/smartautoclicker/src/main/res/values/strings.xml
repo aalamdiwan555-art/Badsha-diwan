@@ -96,12 +96,12 @@
     <string name="home_subscription_value">%1$s</string>
     <string name="home_ad_free">Ad-free access enabled</string>
     <string name="home_free_access">100% free access — no payments required</string>
-    <string name="home_reward_progress">Reward ads today: %1$d / 20</string>
+    <string name="home_reward_progress">Reward ads today: %1$d / %2$d</string>
     <string name="home_reward_ad">Watch reward ad</string>
     <string name="home_reward_loading">Loading reward ad…</string>
     <string name="home_reward_claiming">Confirming your reward securely…</string>
     <string name="home_reward_success">Reward counted. One day of access unlocked.</string>
-    <string name="home_reward_ad_counted">Reward counted. %1$d / 20 ads completed today.</string>
+    <string name="home_reward_ad_counted">Reward counted. %1$d / %2$d ads completed today.</string>
     <string name="home_lifetime_access">Lifetime access</string>
     <string name="home_access_expired">Access expired — watch reward ads or contact the administrator</string>
     <string name="home_subscription_required">Start is unavailable until your free access is active.</string>
@@ -115,7 +115,7 @@
     <string name="profile_title">Your profile</string>
     <string name="profile_email_label">Signed in as</string>
     <string name="profile_access_label">Access</string>
-    <string name="profile_ads_today">Reward ads today: %1$d / 20</string>
+    <string name="profile_ads_today">Reward ads today: %1$d / %2$d</string>
     <string name="profile_ad_free">Ad-free access enabled</string>
     <string name="profile_standard_ads">Standard free access</string>
     <string name="profile_loading">Loading your profile…</string>

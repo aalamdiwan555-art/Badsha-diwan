@@ -49,6 +49,7 @@ class AutopilotHomeActivity : ComponentActivity() {
     private var hasActiveAccess = false
     private var hasLoadedProfile = false
     private var selectedMode: ScenarioMode? = null
+    private var rewardAdsForOneDay = 20
     private val refreshHandler = Handler(Looper.getMainLooper())
     private val refreshProfile = object : Runnable {
         override fun run() {
@@ -115,6 +116,10 @@ class AutopilotHomeActivity : ComponentActivity() {
                 .onSuccess { result ->
                     when (result) {
                         is AuthResult.Authenticated -> {
+                            val settings = runCatching {
+                                accountRepository.loadAppSettings()
+                            }.getOrNull()
+                            rewardAdsForOneDay = settings?.rewardAdsForOneDay ?: 20
                             hasLoadedProfile = true
                             hasActiveAccess = result.profile.hasActiveAccess()
                             selectedMode = result.availableModes.firstOrNull {
@@ -140,9 +145,10 @@ class AutopilotHomeActivity : ComponentActivity() {
                             rewardProgress.text = getString(
                                 R.string.home_reward_progress,
                                 result.profile.adsWatchedToday,
+                                rewardAdsForOneDay,
                             )
                             rewardButton.isEnabled = !result.profile.isAdFree &&
-                                result.profile.adsWatchedToday < 20
+                                result.profile.adsWatchedToday < rewardAdsForOneDay
                         }
                         null -> finish()
                     }
@@ -162,11 +168,16 @@ class AutopilotHomeActivity : ComponentActivity() {
                 lifecycleScope.launch {
                     runCatching { accountRepository.claimRewardAd() }
                         .onSuccess { claim ->
+                            rewardAdsForOneDay = claim.rewardAdsForOneDay
                             statusText.setText(
                                 if (claim.unlocked) {
                                     R.string.home_reward_success
                                 } else {
-                                    R.string.home_reward_ad_counted
+                                    getString(
+                                        R.string.home_reward_ad_counted,
+                                        claim.adsWatchedToday,
+                                        claim.rewardAdsForOneDay,
+                                    )
                                 },
                             )
                             loadProfile()
