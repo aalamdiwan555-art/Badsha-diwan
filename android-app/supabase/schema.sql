@@ -39,6 +39,44 @@ create table if not exists public.scenarios (
   updated_at timestamptz not null default now()
 );
 
+-- Keep the mode selector bounded and unambiguous even when an administrator
+-- writes through the API instead of the Android dashboard.
+create or replace function public.validate_scenario_limits()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if length(trim(new.name)) = 0 or length(new.name) > 80 then
+    raise exception 'Scenario name must contain 1 to 80 characters';
+  end if;
+  if jsonb_typeof(new.scenario_data) <> 'object' then
+    raise exception 'Scenario data must be a JSON object';
+  end if;
+  if new.is_active and (
+    select count(*) from public.scenarios
+    where is_active
+      and id <> new.id
+  ) >= 15 then
+    raise exception 'A maximum of 15 active scenarios is supported';
+  end if;
+  if new.is_active and exists (
+    select 1 from public.scenarios
+    where is_active
+      and id <> new.id
+      and lower(trim(name)) = lower(trim(new.name))
+  ) then
+    raise exception 'Scenario names must be unique';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists scenarios_validate_limits on public.scenarios;
+create trigger scenarios_validate_limits
+before insert or update of name, scenario_data, is_active on public.scenarios
+for each row execute function public.validate_scenario_limits();
+
 alter table public.profiles
   drop constraint if exists profiles_selected_scenario_id_fkey;
 alter table public.profiles
