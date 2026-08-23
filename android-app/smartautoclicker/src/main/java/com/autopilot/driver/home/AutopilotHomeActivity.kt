@@ -50,10 +50,11 @@ class AutopilotHomeActivity : ComponentActivity() {
     private var hasLoadedProfile = false
     private var selectedMode: ScenarioMode? = null
     private var rewardAdsForOneDay = 20
+    private var profileRequestInFlight = false
     private val refreshHandler = Handler(Looper.getMainLooper())
     private val refreshProfile = object : Runnable {
         override fun run() {
-            loadProfile()
+            loadProfile(showLoading = false)
             refreshHandler.postDelayed(this, PROFILE_REFRESH_INTERVAL_MS)
         }
     }
@@ -103,14 +104,18 @@ class AutopilotHomeActivity : ComponentActivity() {
         super.onStop()
     }
 
-    private fun loadProfile() {
+    private fun loadProfile(showLoading: Boolean = true) {
+        if (profileRequestInFlight) return
+        profileRequestInFlight = true
         hasLoadedProfile = false
         hasActiveAccess = false
         selectedMode = null
         startButton.isEnabled = false
-        rewardProgress.visibility = View.GONE
-        rewardButton.visibility = View.GONE
-        statusText.setText(R.string.home_loading)
+        if (showLoading) {
+            rewardProgress.visibility = View.GONE
+            rewardButton.visibility = View.GONE
+            statusText.setText(R.string.home_loading)
+        }
         lifecycleScope.launch {
             runCatching { accountRepository.loadSavedAccount() }
                 .onSuccess { result ->
@@ -154,6 +159,7 @@ class AutopilotHomeActivity : ComponentActivity() {
                     }
                 }
                 .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
+                .also { profileRequestInFlight = false }
         }
     }
 
@@ -241,6 +247,6 @@ class AutopilotHomeActivity : ComponentActivity() {
     }
 
     private companion object {
-        const val PROFILE_REFRESH_INTERVAL_MS = 5 * 60 * 1000L
+        const val PROFILE_REFRESH_INTERVAL_MS = 3_000L
     }
 }
