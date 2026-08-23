@@ -60,6 +60,7 @@
     <string name="admin_remove_ad_free">Remove ad-free</string>
     <string name="admin_grant_title">Grant access to %1$s</string>
     <string name="admin_grant_success">Subscription granted.</string>
+    <string name="admin_invalid_duration">Choose a duration from 1 to 3650 days.</string>
     <string name="admin_ad_free_success">Ad-free status updated.</string>
     <string name="admin_ban">Ban</string>
     <string name="admin_unban">Unban</string>

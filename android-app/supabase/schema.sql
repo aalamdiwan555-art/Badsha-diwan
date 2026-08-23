@@ -367,6 +367,15 @@ begin
 end;
 $$;
 
+-- These SECURITY DEFINER functions must not be callable anonymously. Their
+-- internal admin check remains the authorization boundary for signed-in users.
+revoke all on function public.admin_grant_subscription(uuid, integer, text) from public;
+grant execute on function public.admin_grant_subscription(uuid, integer, text) to authenticated;
+revoke all on function public.admin_set_ad_free(uuid, boolean) from public;
+grant execute on function public.admin_set_ad_free(uuid, boolean) to authenticated;
+revoke all on function public.admin_set_banned(uuid, boolean, text) from public;
+grant execute on function public.admin_set_banned(uuid, boolean, text) to authenticated;
+
 -- Reward completion is intentionally handled as one atomic server operation.
 -- The Android client should call this only after the ad provider reports a
 -- completed rewarded impression; it must never update profile counters locally.

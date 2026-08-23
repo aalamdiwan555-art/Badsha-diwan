@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.text.InputType
 import androidx.appcompat.app.AlertDialog
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
@@ -212,17 +213,54 @@ class AdminDashboardActivity : ComponentActivity() {
             "90 days",
             "365 days",
             "Lifetime",
+            "Custom duration…",
         )
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.admin_grant_title, user.email))
             .setItems(labels) { _, which ->
-                lifecycleScope.launch {
-                    runCatching { accountRepository.grantSubscription(user.id, durations[which], null) }
-                        .onSuccess { statusText.setText(R.string.admin_grant_success); loadDashboard() }
-                        .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
+                if (which == durations.size) {
+                    showCustomGrantDuration(user)
+                } else {
+                    grantSubscription(user, durations[which])
                 }
             }
             .show()
+    }
+
+    private fun showCustomGrantDuration(user: com.autopilot.driver.data.remote.UserProfile) {
+        val input = EditText(this).apply {
+            hint = "Number of days (1–3650)"
+            inputType = InputType.TYPE_CLASS_NUMBER
+        }
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.admin_grant_title, user.email))
+            .setView(input)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.admin_grant) { _, _ ->
+                val duration = input.text.toString().toIntOrNull()
+                if (duration == null || duration !in 1..3650) {
+                    statusText.setText(R.string.admin_invalid_duration)
+                } else {
+                    grantSubscription(user, duration)
+                }
+            }
+            .show()
+    }
+
+    private fun grantSubscription(
+        user: com.autopilot.driver.data.remote.UserProfile,
+        durationDays: Int,
+    ) {
+        lifecycleScope.launch {
+            runCatching { accountRepository.grantSubscription(user.id, durationDays, null) }
+                .onSuccess {
+                    statusText.setText(R.string.admin_grant_success)
+                    loadDashboard()
+                }
+                .onFailure {
+                    statusText.text = it.message ?: getString(R.string.auth_generic_error)
+                }
+        }
     }
 
     private fun changeAdFree(user: com.autopilot.driver.data.remote.UserProfile) {
