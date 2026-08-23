@@ -53,6 +53,7 @@ class ScenarioActivity : AppCompatActivity(), ScenarioListFragment.Listener {
 
     /** Scenario clicked by the user. */
     private var requestedItem: ScenarioListUiState.Item.ScenarioItem? = null
+    private var isAutopilotLaunch = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -61,9 +62,18 @@ class ScenarioActivity : AppCompatActivity(), ScenarioListFragment.Listener {
 
         scenarioViewModel.stopScenario()
         scenarioViewModel.requestUserConsentIfNeeded(this)
+        val autopilotScenarioName = intent.getStringExtra(EXTRA_AUTOPILOT_SCENARIO_NAME)
+            ?.takeIf { it.isNotBlank() }
+        isAutopilotLaunch = autopilotScenarioName != null
         supportFragmentManager.findFragmentById(R.id.fragment)
             ?.let { it as? ScenarioListFragment }
-            ?.requestAutoStart(intent.getStringExtra(EXTRA_AUTOPILOT_SCENARIO_NAME))
+            ?.requestAutoStart(autopilotScenarioName)
+        if (isAutopilotLaunch) {
+            // Autopilot users must never browse or edit the local scenario
+            // catalog. The fragment remains attached so it can resolve the
+            // server-approved scenario and start it automatically.
+            findViewById<View>(R.id.fragment).visibility = View.INVISIBLE
+        }
 
         mediaProjectionRequest.registerForActivityResult(this)
 
@@ -128,11 +138,15 @@ class ScenarioActivity : AppCompatActivity(), ScenarioListFragment.Listener {
 
     private fun handleScenarioStartResult(result: Boolean) {
         if (result) finish()
-        else Toast.makeText(this, R.string.toast_denied_foreground_permission, Toast.LENGTH_SHORT).show()
+        else {
+            Toast.makeText(this, R.string.toast_denied_foreground_permission, Toast.LENGTH_SHORT).show()
+            if (isAutopilotLaunch) finish()
+        }
     }
 
     private fun showProjectionDeniedToast() {
         Toast.makeText(this, R.string.toast_denied_screen_sharing_permission, Toast.LENGTH_SHORT).show()
+        if (isAutopilotLaunch) finish()
     }
 
     companion object {
