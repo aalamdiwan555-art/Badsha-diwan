@@ -58,6 +58,12 @@
     <string name="admin_grant_title">Grant access to %1$s</string>
     <string name="admin_grant_success">Subscription granted.</string>
     <string name="admin_ad_free_success">Ad-free status updated.</string>
+    <string name="admin_ban">Ban</string>
+    <string name="admin_unban">Unban</string>
+    <string name="admin_ban_title">Ban %1$s</string>
+    <string name="admin_ban_reason_hint">Reason (optional)</string>
+    <string name="admin_ban_success">User banned.</string>
+    <string name="admin_unban_success">User unbanned.</string>
     <string name="admin_name_required">Enter a mode name first.</string>
     <string name="admin_access_required">Administrator access is required.</string>
     <string name="admin_mode_limit">You can publish up to 15 modes.</string>

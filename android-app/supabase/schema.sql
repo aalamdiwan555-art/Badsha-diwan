@@ -22,6 +22,9 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+alter table public.profiles add column if not exists is_banned boolean not null default false;
+alter table public.profiles add column if not exists ban_reason text;
+
 create table if not exists public.scenarios (
   id uuid primary key default gen_random_uuid(),
   admin_id uuid references public.profiles(id) not null,
@@ -252,6 +255,43 @@ begin
     case when ad_free_value then 'grant_ad_free' else 'remove_ad_free' end,
     target_user_id,
     jsonb_build_object('is_ad_free', ad_free_value)
+  );
+end;
+$$;
+
+create or replace function public.admin_set_banned(
+  target_user_id uuid,
+  banned_value boolean,
+  reason text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required';
+  end if;
+  if target_user_id = auth.uid() then
+    raise exception 'Administrators cannot ban themselves';
+  end if;
+
+  update public.profiles
+  set is_banned = banned_value,
+      ban_reason = case when banned_value then nullif(trim(reason), '') else null end,
+      updated_at = now()
+  where id = target_user_id;
+  if not found then
+    raise exception 'Target user not found';
+  end if;
+
+  insert into public.admin_logs (admin_id, action, target_user_id, details)
+  values (
+    auth.uid(),
+    case when banned_value then 'ban_user' else 'unban_user' end,
+    target_user_id,
+    jsonb_build_object('is_banned', banned_value, 'reason', reason)
   );
 end;
 $$;

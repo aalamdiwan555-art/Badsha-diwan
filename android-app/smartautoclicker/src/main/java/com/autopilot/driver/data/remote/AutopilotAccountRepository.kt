@@ -93,6 +93,12 @@ class AutopilotAccountRepository(
         client.setAdFree(accessToken, userId, adFree)
     }
 
+    suspend fun setBanned(userId: String, banned: Boolean, reason: String?) {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot change ban status without an authenticated session")
+        client.setBanned(accessToken, userId, banned, reason?.trim())
+    }
+
     suspend fun loadUsers(): List<UserProfile> {
         val accessToken = sessionStore.accessToken
             ?: error("Cannot load users without an authenticated session")

@@ -589,3 +589,12 @@ DETAILS:
   - Grant access supports the required durations from one day through lifetime
   - Ad-free status can be granted or removed from the user list
   - Each control calls the audited server RPC and refreshes the dashboard afterward
+
+--- CHECKPOINT 39: Secure Ban Controls Added ---
+DATE: 2026-08-23
+WHAT: Added audited administrator ban and unban controls
+WHY: Account restrictions require server authorization and a traceable reason
+DETAILS:
+  - Added profile ban state and optional ban reason fields
+  - Added admin-only RPC that prevents self-banning and records audit details
+  - Added ban/unban buttons and optional reason dialog to the administrator user list

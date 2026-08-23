@@ -244,6 +244,24 @@ class SupabaseRestClient(
         )
     }
 
+    suspend fun setBanned(
+        accessToken: String,
+        userId: String,
+        banned: Boolean,
+        reason: String?,
+    ) = withContext(Dispatchers.IO) {
+        request(
+            method = "POST",
+            path = SupabaseConfig.ADMIN_SET_BANNED_RPC,
+            body = JSONObject()
+                .put("target_user_id", userId)
+                .put("banned_value", banned)
+                .put("reason", reason)
+                .toString(),
+            accessToken = accessToken,
+        )
+    }
+
     private fun request(
         method: String,
         path: String,
@@ -309,6 +327,8 @@ data class UserProfile(
     val adsWatchedToday: Int,
     val selectedScenarioId: String?,
     val selectedScenarioName: String?,
+    val isBanned: Boolean,
+    val banReason: String?,
 )
 
 data class ScenarioMode(
@@ -332,4 +352,6 @@ private fun JSONObject.toUserProfile() = UserProfile(
         .takeIf { it.isNotBlank() && it != "null" },
     selectedScenarioName = optString("selected_scenario_name")
         .takeIf { it.isNotBlank() && it != "null" },
+    isBanned = optBoolean("is_banned", false),
+    banReason = optString("ban_reason").takeIf { it.isNotBlank() && it != "null" },
 )

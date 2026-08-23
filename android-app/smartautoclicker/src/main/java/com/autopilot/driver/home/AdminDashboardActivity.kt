@@ -143,7 +143,11 @@ class AdminDashboardActivity : ComponentActivity() {
         userList.addView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val label = TextView(this@AdminDashboardActivity).apply {
-                text = getString(R.string.admin_user_item, user.email, user.subscriptionStatus)
+                text = getString(
+                    R.string.admin_user_item,
+                    user.email,
+                    user.subscriptionStatus + if (user.isBanned) " · BANNED" else "",
+                )
                 setTextColor(getColor(android.R.color.white))
                 textSize = 15f
                 setPadding(0, 12, 0, 4)
@@ -159,8 +163,40 @@ class AdminDashboardActivity : ComponentActivity() {
                     text = getString(if (user.isAdFree) R.string.admin_remove_ad_free else R.string.admin_make_ad_free)
                     setOnClickListener { changeAdFree(user) }
                 })
+                addView(Button(this@AdminDashboardActivity).apply {
+                    text = getString(if (user.isBanned) R.string.admin_unban else R.string.admin_ban)
+                    setOnClickListener { changeBanStatus(user) }
+                })
             })
         })
+    }
+
+    private fun changeBanStatus(user: com.autopilot.driver.data.remote.UserProfile) {
+        if (user.isBanned) {
+            updateBan(user, false, null)
+            return
+        }
+        val reasonInput = EditText(this).apply { hint = getString(R.string.admin_ban_reason_hint) }
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.admin_ban_title, user.email))
+            .setView(reasonInput)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.admin_ban) { _, _ ->
+                updateBan(user, true, reasonInput.text.toString())
+            }
+            .show()
+    }
+
+    private fun updateBan(
+        user: com.autopilot.driver.data.remote.UserProfile,
+        banned: Boolean,
+        reason: String?,
+    ) {
+        lifecycleScope.launch {
+            runCatching { accountRepository.setBanned(user.id, banned, reason) }
+                .onSuccess { statusText.setText(if (banned) R.string.admin_ban_success else R.string.admin_unban_success); loadDashboard() }
+                .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
+        }
     }
 
     private fun chooseGrantDuration(user: com.autopilot.driver.data.remote.UserProfile) {
