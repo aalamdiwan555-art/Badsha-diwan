@@ -607,3 +607,14 @@ DETAILS:
   - Limits scenario payloads to 256 KiB and 500 actions
   - Requires every action to be an object with a non-empty bounded type
   - Rejects non-finite numeric values recursively
+
+--- CHECKPOINT 41: Offline Mode Cache and Ban Enforcement Added ---
+DATE: 2026-08-23
+WHAT: Added offline-safe published mode caching and consistent banned-account handling
+WHY: Users should retain the last server-approved mode list during short network outages, while disabled accounts must never reach the clicker home
+WHERE: AutopilotModeCache, AutopilotAccountRepository, AutopilotSessionStore, authentication strings
+DETAILS:
+  - Caches the last valid published mode list in private app preferences
+  - Refreshes the cache after successful Supabase mode reads and falls back to it when a read fails
+  - Persists the selected mode after a successful server update
+  - Clears the local session and blocks navigation when the server marks an account as banned
