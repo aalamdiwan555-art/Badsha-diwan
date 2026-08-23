@@ -95,7 +95,13 @@ class AutopilotWelcomeActivity : ComponentActivity() {
                 }
                 .onFailure {
                     setLoading(false)
-                    showStatus(it.message ?: getString(R.string.auth_generic_error))
+                    showStatus(
+                        if (it is com.autopilot.driver.data.remote.BannedAccountException) {
+                            getString(R.string.auth_account_disabled)
+                        } else {
+                            it.message ?: getString(R.string.auth_generic_error)
+                        },
+                    )
                 }
         }
     }
