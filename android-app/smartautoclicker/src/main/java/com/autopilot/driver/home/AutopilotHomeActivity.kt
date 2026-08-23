@@ -21,6 +21,7 @@ import com.autopilot.driver.data.remote.AuthResult
 import com.autopilot.driver.data.remote.RemoteModeInstaller
 import com.autopilot.driver.data.remote.ScenarioMode
 import com.autopilot.driver.data.remote.SupabaseRestClient
+import com.autopilot.driver.data.remote.UserProfile
 import com.buzbuz.smartautoclicker.R
 import com.buzbuz.smartautoclicker.core.common.accessibility.domain.LocalAccessibilityServiceConnection
 import com.buzbuz.smartautoclicker.core.dumb.domain.IDumbRepository
@@ -117,6 +118,8 @@ class AutopilotHomeActivity : ComponentActivity() {
 
     override fun onDestroy() {
         bannerAdController.destroy(bannerContainer)
+        finishClickSession()
+        stopService(Intent(this, com.autopilot.driver.service.AutopilotFloatingBannerService::class.java))
         super.onDestroy()
     }
 
