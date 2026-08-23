@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.auth.ModeSelectionActivity
+import com.autopilot.driver.ads.InterstitialAdController
 import com.autopilot.driver.ads.RewardAdController
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
 import com.autopilot.driver.data.remote.AutopilotSessionStore
@@ -46,6 +47,7 @@ class AutopilotHomeActivity : ComponentActivity() {
     private lateinit var rewardButton: Button
     private lateinit var rewardProgress: TextView
     private val rewardAdController = RewardAdController()
+    private val interstitialAdController = InterstitialAdController()
     private var hasActiveAccess = false
     private var hasLoadedProfile = false
     private var selectedMode: ScenarioMode? = null
@@ -156,6 +158,25 @@ class AutopilotHomeActivity : ComponentActivity() {
                             )
                             rewardButton.isEnabled = !result.profile.isAdFree &&
                                 result.profile.adsWatchedToday < rewardAdsForOneDay
+                            interstitialAdController.maybeShow(
+                                activity = this@AutopilotHomeActivity,
+                                isAdFree = result.profile.isAdFree,
+                                intervalMinutes = settings?.interstitialIntervalMinutes ?: 2,
+                                onShown = {
+                                    lifecycleScope.launch {
+                                        runCatching {
+                                            accountRepository.logAdEvent("interstitial", "shown")
+                                        }
+                                    }
+                                },
+                                onError = {
+                                    lifecycleScope.launch {
+                                        runCatching {
+                                            accountRepository.logAdEvent("interstitial", "failed")
+                                        }
+                                    }
+                                },
+                            )
                         }
                         null -> finish()
                     }
