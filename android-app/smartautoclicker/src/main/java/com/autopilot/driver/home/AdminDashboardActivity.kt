@@ -152,10 +152,17 @@ class AdminDashboardActivity : ComponentActivity() {
                             })
                         }
                         userList.removeAllViews()
-                        accountRepository.loadUsers()
-                            .filter { it.id != result.profile.id }
-                            .forEach { user -> addUser(user) }
-                        statusText.setText(R.string.admin_read_only_status)
+                        runCatching { accountRepository.loadUsers() }
+                            .onSuccess { users ->
+                                users
+                                    .filter { it.id != result.profile.id }
+                                    .forEach(::addUser)
+                                statusText.setText(R.string.admin_read_only_status)
+                            }
+                            .onFailure {
+                                statusText.text = it.message
+                                    ?: getString(R.string.admin_users_load_error)
+                            }
                     }
                 }
                 .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
