@@ -13,7 +13,7 @@ import com.autopilot.driver.data.remote.AutopilotSessionStore
 import com.autopilot.driver.data.remote.ScenarioMode
 import com.autopilot.driver.data.remote.SupabaseRestClient
 import com.buzbuz.smartautoclicker.R
-import com.buzbuz.smartautoclicker.scenarios.ScenarioActivity
+import com.autopilot.driver.home.AutopilotHomeActivity
 import kotlinx.coroutines.launch
 
 /**
@@ -81,7 +81,7 @@ class ModeSelectionActivity : ComponentActivity() {
     }
 
     private fun openClicker() {
-        startActivity(Intent(this, ScenarioActivity::class.java))
+        startActivity(Intent(this, AutopilotHomeActivity::class.java))
         finish()
     }
 }

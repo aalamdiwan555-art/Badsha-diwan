@@ -423,6 +423,17 @@ DETAILS:
   - Shows a clear empty state when no modes are published
   - Keeps mode creation and editing outside the user experience
 
+--- CHECKPOINT 30: Authenticated User Home Added ---
+DATE: 2026-08-23
+WHAT: Added the authenticated Autopilot home screen with Mode and access status
+WHY: Users need a focused place to start or stop the clicker without managing scenarios
+WHERE: Home activity, layout, manifest, authentication routing, app resources
+DETAILS:
+  - Displays the active remote Mode and subscription status
+  - Provides Start and Stop controls
+  - Connects Stop to the running accessibility service
+  - Provides a direct path to switch the selected Mode
+
 ================================================================================
 KEY CONTACT & REFERENCES
 ================================================================================

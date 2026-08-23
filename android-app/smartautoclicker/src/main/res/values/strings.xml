@@ -36,6 +36,18 @@
     <string name="mode_loading">Loading available modes…</string>
     <string name="mode_empty">No modes are available yet. Check back soon.</string>
     <string name="mode_save_error">That mode could not be selected. Please try again.</string>
+    <string name="home_title">Autopilot</string>
+    <string name="home_mode_label">Active Mode</string>
+    <string name="home_no_mode">No Mode selected</string>
+    <string name="home_subscription_label">Access status</string>
+    <string name="home_subscription_value">%1$s</string>
+    <string name="home_ad_free">Ad-free access enabled</string>
+    <string name="home_start">Start clicker</string>
+    <string name="home_stop">Stop clicker</string>
+    <string name="home_switch_mode">Switch Mode</string>
+    <string name="home_loading">Loading your Autopilot profile…</string>
+    <string name="home_stop_status">Stop requested.</string>
+    <string name="home_start_status">Choose a Mode before starting.</string>
 
     <string name="activity_scenario_title">Scenarios</string>
     <string name="accessibility_service_description">Autopilot uses this service to perform the clicks and gestures you configure in your selected mode. It only runs when you start a session and does not collect content from other apps.</string>
