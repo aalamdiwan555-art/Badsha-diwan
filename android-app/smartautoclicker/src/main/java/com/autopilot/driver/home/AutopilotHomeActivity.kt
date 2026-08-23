@@ -87,11 +87,11 @@ class AutopilotHomeActivity : ComponentActivity() {
             startActivity(Intent(this, ProfileActivity::class.java))
         }
 
-        loadProfile()
     }
 
     override fun onStart() {
         super.onStart()
+        loadProfile()
         refreshHandler.removeCallbacks(refreshProfile)
         refreshHandler.postDelayed(refreshProfile, PROFILE_REFRESH_INTERVAL_MS)
     }
