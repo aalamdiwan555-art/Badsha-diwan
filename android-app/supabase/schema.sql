@@ -203,6 +203,7 @@ alter table public.admin_logs enable row level security;
 
 create policy "profiles_self_read" on public.profiles
   for select using (id = auth.uid() or public.is_admin());
+drop policy if exists "profiles_self_update" on public.profiles;
 
 create policy "scenarios_visible_to_users" on public.scenarios
   for select using (
