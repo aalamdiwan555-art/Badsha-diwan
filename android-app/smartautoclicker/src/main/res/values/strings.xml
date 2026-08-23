@@ -39,6 +39,7 @@
     <string name="mode_current">Current mode: %1$s</string>
     <string name="mode_selected">Selected: %1$s</string>
     <string name="mode_switched">Switched to %1$s</string>
+    <string name="mode_retry">Try again</string>
     <string name="home_title">Autopilot</string>
     <string name="home_mode_label">Active Mode</string>
     <string name="home_no_mode">No Mode selected</string>

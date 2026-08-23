@@ -35,6 +35,16 @@
             android:textColor="#B8C5D6"
             android:textSize="15sp" />
 
+        <Button
+            android:id="@+id/mode_retry"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/mode_retry"
+            android:textColor="#00F0FF"
+            android:visibility="gone" />
+
         <LinearLayout
             android:id="@+id/mode_list"
             android:layout_width="match_parent"

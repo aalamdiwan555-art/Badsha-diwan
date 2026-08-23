@@ -25,6 +25,7 @@ class ModeSelectionActivity : ComponentActivity() {
 
     private lateinit var modeList: LinearLayout
     private lateinit var statusText: TextView
+    private lateinit var retryButton: Button
     private var selectedModeId: String? = null
 
     private val accountRepository by lazy {
@@ -39,16 +40,23 @@ class ModeSelectionActivity : ComponentActivity() {
         setContentView(R.layout.activity_mode_selection)
         modeList = findViewById(R.id.mode_list)
         statusText = findViewById(R.id.mode_status)
+        retryButton = findViewById(R.id.mode_retry)
+        retryButton.setOnClickListener { loadModes() }
         statusText.setText(R.string.mode_loading)
         loadModes()
     }
 
     private fun loadModes() {
+        retryButton.visibility = View.GONE
+        modeList.removeAllViews()
+        statusText.visibility = View.VISIBLE
+        statusText.setText(R.string.mode_loading)
         lifecycleScope.launch {
             runCatching { accountRepository.loadSavedAccount() }
                 .onSuccess { result ->
                     if (result == null || result.availableModes.isEmpty()) {
                         statusText.setText(R.string.mode_empty)
+                        retryButton.visibility = View.VISIBLE
                     } else {
                         statusText.visibility = View.GONE
                         selectedModeId = result.profile.selectedScenarioId
@@ -59,7 +67,10 @@ class ModeSelectionActivity : ComponentActivity() {
                         }
                     }
                 }
-                .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
+                .onFailure {
+                    statusText.text = it.message ?: getString(R.string.auth_generic_error)
+                    retryButton.visibility = View.VISIBLE
+                }
         }
     }
 
