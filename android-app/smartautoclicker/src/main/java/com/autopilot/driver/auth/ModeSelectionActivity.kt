@@ -35,6 +35,7 @@ class ModeSelectionActivity : ComponentActivity() {
     private lateinit var statusText: TextView
     private lateinit var retryButton: Button
     private var selectedModeId: String? = null
+    private val modeCache by lazy { AutopilotModeCache(applicationContext) }
 
     private val accountRepository by lazy {
         AutopilotAccountRepository(
@@ -45,6 +46,12 @@ class ModeSelectionActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (modeCache.loadModes().isNotEmpty() &&
+            modeCache.loadModes().any { it.id == modeCache.selectedModeId() }
+        ) {
+            openClicker()
+            return
+        }
         setContentView(R.layout.activity_mode_selection)
         modeList = findViewById(R.id.mode_list)
         statusText = findViewById(R.id.mode_status)
