@@ -54,6 +54,7 @@
     <string name="admin_invalid_scenario">Use JSON with up to 500 actions. Every action needs a type and finite numeric values.</string>
     <string name="admin_mode_updated">Mode updated.</string>
     <string name="admin_users_title">Users</string>
+    <string name="admin_users_load_error">Could not load users. Check your connection and refresh.</string>
     <string name="admin_user_item">%1$s · %2$s</string>
     <string name="admin_grant">Grant access</string>
     <string name="admin_make_ad_free">Make ad-free</string>
