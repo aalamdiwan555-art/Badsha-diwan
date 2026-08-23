@@ -103,21 +103,7 @@ class SupabaseRestClient(
             )
             if (rows.length() == 0) return@withContext null
 
-            val row = rows.getJSONObject(0)
-            UserProfile(
-                id = row.getString("id"),
-                email = row.getString("email"),
-                role = row.optString("role", "user"),
-                subscriptionStatus = row.optString("subscription_status", "inactive"),
-                subscriptionExpiresAt = row.optString("subscription_expires_at")
-                    .takeIf { it.isNotBlank() && it != "null" },
-                isAdFree = row.optBoolean("is_ad_free", false),
-                adsWatchedToday = row.optInt("ads_watched_today", 0),
-                selectedScenarioId = row.optString("selected_scenario_id")
-                    .takeIf { it.isNotBlank() && it != "null" },
-                selectedScenarioName = row.optString("selected_scenario_name")
-                    .takeIf { it.isNotBlank() && it != "null" },
-            )
+            rows.getJSONObject(0).toUserProfile()
         }
 
     suspend fun selectScenario(
@@ -160,6 +146,14 @@ class SupabaseRestClient(
                         ),
                     )
                 }
+            }
+        }
+
+    suspend fun fetchProfiles(accessToken: String): List<UserProfile> =
+        withContext(Dispatchers.IO) {
+            val rows = JSONArray(request("GET", SupabaseConfig.PROFILES_PATH, null, accessToken))
+            buildList(rows.length()) {
+                for (index in 0 until rows.length()) add(rows.getJSONObject(index).toUserProfile())
             }
         }
 
@@ -323,4 +317,19 @@ data class ScenarioMode(
     val description: String?,
     val version: Int,
     val scenarioData: JSONObject,
+)
+
+private fun JSONObject.toUserProfile() = UserProfile(
+    id = getString("id"),
+    email = getString("email"),
+    role = optString("role", "user"),
+    subscriptionStatus = optString("subscription_status", "inactive"),
+    subscriptionExpiresAt = optString("subscription_expires_at")
+        .takeIf { it.isNotBlank() && it != "null" },
+    isAdFree = optBoolean("is_ad_free", false),
+    adsWatchedToday = optInt("ads_watched_today", 0),
+    selectedScenarioId = optString("selected_scenario_id")
+        .takeIf { it.isNotBlank() && it != "null" },
+    selectedScenarioName = optString("selected_scenario_name")
+        .takeIf { it.isNotBlank() && it != "null" },
 )

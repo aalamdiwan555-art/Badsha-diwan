@@ -93,6 +93,12 @@ class AutopilotAccountRepository(
         client.setAdFree(accessToken, userId, adFree)
     }
 
+    suspend fun loadUsers(): List<UserProfile> {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot load users without an authenticated session")
+        return client.fetchProfiles(accessToken)
+    }
+
     fun signOut() = sessionStore.clear()
 
     private suspend fun loadAccount(session: AuthSession): AuthResult {

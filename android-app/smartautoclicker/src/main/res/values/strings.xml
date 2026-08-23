@@ -50,6 +50,14 @@
     <string name="admin_scenario_json_hint">Scenario JSON with an actions array</string>
     <string name="admin_invalid_scenario">Use valid JSON containing an actions array.</string>
     <string name="admin_mode_updated">Mode updated.</string>
+    <string name="admin_users_title">Users</string>
+    <string name="admin_user_item">%1$s · %2$s</string>
+    <string name="admin_grant">Grant access</string>
+    <string name="admin_make_ad_free">Make ad-free</string>
+    <string name="admin_remove_ad_free">Remove ad-free</string>
+    <string name="admin_grant_title">Grant access to %1$s</string>
+    <string name="admin_grant_success">Subscription granted.</string>
+    <string name="admin_ad_free_success">Ad-free status updated.</string>
     <string name="admin_name_required">Enter a mode name first.</string>
     <string name="admin_access_required">Administrator access is required.</string>
     <string name="admin_mode_limit">You can publish up to 15 modes.</string>

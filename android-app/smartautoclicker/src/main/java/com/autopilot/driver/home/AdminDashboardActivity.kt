@@ -28,6 +28,7 @@ class AdminDashboardActivity : ComponentActivity() {
     private lateinit var statusText: TextView
     private lateinit var modeCount: TextView
     private lateinit var modeList: LinearLayout
+    private lateinit var userList: LinearLayout
     private lateinit var modeNameInput: EditText
     private lateinit var modeDescriptionInput: EditText
 
@@ -44,6 +45,7 @@ class AdminDashboardActivity : ComponentActivity() {
         statusText = findViewById(R.id.admin_status)
         modeCount = findViewById(R.id.admin_mode_count)
         modeList = findViewById(R.id.admin_mode_list)
+        userList = findViewById(R.id.admin_user_list)
         modeNameInput = findViewById(R.id.admin_mode_name)
         modeDescriptionInput = findViewById(R.id.admin_mode_description)
 
@@ -126,9 +128,60 @@ class AdminDashboardActivity : ComponentActivity() {
                                 })
                             })
                         }
+                        userList.removeAllViews()
+                        accountRepository.loadUsers()
+                            .filter { it.id != result.profile.id }
+                            .forEach { user -> addUser(user) }
                         statusText.setText(R.string.admin_read_only_status)
                     }
                 }
+                .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
+        }
+    }
+
+    private fun addUser(user: com.autopilot.driver.data.remote.UserProfile) {
+        userList.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val label = TextView(this@AdminDashboardActivity).apply {
+                text = getString(R.string.admin_user_item, user.email, user.subscriptionStatus)
+                setTextColor(getColor(android.R.color.white))
+                textSize = 15f
+                setPadding(0, 12, 0, 4)
+            }
+            addView(label)
+            addView(LinearLayout(this@AdminDashboardActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                addView(Button(this@AdminDashboardActivity).apply {
+                    text = getString(R.string.admin_grant)
+                    setOnClickListener { chooseGrantDuration(user) }
+                })
+                addView(Button(this@AdminDashboardActivity).apply {
+                    text = getString(if (user.isAdFree) R.string.admin_remove_ad_free else R.string.admin_make_ad_free)
+                    setOnClickListener { changeAdFree(user) }
+                })
+            })
+        })
+    }
+
+    private fun chooseGrantDuration(user: com.autopilot.driver.data.remote.UserProfile) {
+        val durations = intArrayOf(1, 2, 3, 7, 15, 30, 90, 365, 99999)
+        val labels = arrayOf("1 day", "2 days", "3 days", "7 days", "15 days", "30 days", "90 days", "365 days", "Lifetime")
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.admin_grant_title, user.email))
+            .setItems(labels) { _, which ->
+                lifecycleScope.launch {
+                    runCatching { accountRepository.grantSubscription(user.id, durations[which], null) }
+                        .onSuccess { statusText.setText(R.string.admin_grant_success); loadDashboard() }
+                        .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
+                }
+            }
+            .show()
+    }
+
+    private fun changeAdFree(user: com.autopilot.driver.data.remote.UserProfile) {
+        lifecycleScope.launch {
+            runCatching { accountRepository.setAdFree(user.id, !user.isAdFree) }
+                .onSuccess { statusText.setText(R.string.admin_ad_free_success); loadDashboard() }
                 .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
         }
     }

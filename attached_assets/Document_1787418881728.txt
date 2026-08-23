@@ -578,3 +578,14 @@ DETAILS:
   - Both operations write admin_logs records with the target and change details
   - RPCs reject non-admin callers, unsupported durations, and missing users
   - Android calls use the signed-in access token and never require a service key
+
+--- CHECKPOINT 38: Administrator User Controls Added ---
+DATE: 2026-08-23
+WHAT: Added administrator user listing, subscription grants, and ad-free controls
+WHY: The secure privileged operations must be usable from the Android control center
+WHERE: Supabase profile client, account repository, administrator dashboard/layout and strings
+DETAILS:
+  - Admins can list users and see subscription state
+  - Grant access supports the required durations from one day through lifetime
+  - Ad-free status can be granted or removed from the user list
+  - Each control calls the audited server RPC and refreshes the dashboard afterward
