@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
+import com.autopilot.driver.data.remote.AutopilotModeCache
 import com.autopilot.driver.data.remote.AutopilotSessionStore
 import com.autopilot.driver.data.remote.RemoteModeInstaller
 import com.autopilot.driver.data.remote.ScenarioMode
