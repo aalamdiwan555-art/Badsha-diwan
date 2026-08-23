@@ -169,7 +169,15 @@ class AutopilotHomeActivity : ComponentActivity() {
         statusText.setText(R.string.home_reward_loading)
         rewardAdController.show(
             activity = this,
+            onStarted = {
+                lifecycleScope.launch {
+                    runCatching { accountRepository.logAdEvent("rewarded", "started") }
+                }
+            },
             onRewarded = {
+                lifecycleScope.launch {
+                    runCatching { accountRepository.logAdEvent("rewarded", "playback_completed") }
+                }
                 statusText.setText(R.string.home_reward_claiming)
                 lifecycleScope.launch {
                     runCatching { accountRepository.claimRewardAd() }
@@ -195,6 +203,9 @@ class AutopilotHomeActivity : ComponentActivity() {
                 }
             },
             onError = {
+                lifecycleScope.launch {
+                    runCatching { accountRepository.logAdEvent("rewarded", "failed") }
+                }
                 rewardButton.isEnabled = true
                 statusText.text = it
             },

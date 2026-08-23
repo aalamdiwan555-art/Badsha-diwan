@@ -132,6 +132,12 @@ class AutopilotAccountRepository(
         return client.claimRewardAd(accessToken)
     }
 
+    suspend fun logAdEvent(adType: String, eventType: String) {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot log an ad event without an authenticated session")
+        client.logAdEvent(accessToken, adType, eventType)
+    }
+
     suspend fun loadUsers(): List<UserProfile> {
         val accessToken = sessionStore.accessToken
             ?: error("Cannot load users without an authenticated session")

@@ -17,6 +17,7 @@ class RewardAdController : RewardAdPlayer {
         activity: Activity,
         onRewarded: () -> Unit,
         onError: (String) -> Unit,
+        onStarted: () -> Unit,
     ) {
         val showAd = {
             if (!UnityAds.isReady(AD_UNIT_ID)) {
@@ -96,7 +97,7 @@ class RewardAdController : RewardAdPlayer {
                 message: String?,
             ) = onError(message ?: "Reward ad could not be shown.")
 
-            override fun onUnityAdsShowStart(placementId: String?) = Unit
+            override fun onUnityAdsShowStart(placementId: String?) = onStarted()
             override fun onUnityAdsShowClick(placementId: String?) = Unit
 
             override fun onUnityAdsShowComplete(

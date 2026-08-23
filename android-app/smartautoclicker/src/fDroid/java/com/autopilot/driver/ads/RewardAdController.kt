@@ -7,6 +7,7 @@ class RewardAdController : RewardAdPlayer {
         activity: Activity,
         onRewarded: () -> Unit,
         onError: (String) -> Unit,
+        onStarted: () -> Unit,
     ) {
         onError("Reward ads are available in the Play Store build.")
     }

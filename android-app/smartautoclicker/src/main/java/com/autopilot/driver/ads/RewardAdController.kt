@@ -11,5 +11,6 @@ interface RewardAdPlayer {
         activity: Activity,
         onRewarded: () -> Unit,
         onError: (String) -> Unit,
+        onStarted: () -> Unit = {},
     )
 }

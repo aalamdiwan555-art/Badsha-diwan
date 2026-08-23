@@ -320,6 +320,22 @@ class SupabaseRestClient(
             )
         }
 
+    suspend fun logAdEvent(
+        accessToken: String,
+        adType: String,
+        eventType: String,
+    ) = withContext(Dispatchers.IO) {
+        request(
+            method = "POST",
+            path = SupabaseConfig.LOG_AD_EVENT_RPC,
+            body = JSONObject()
+                .put("ad_type_value", adType)
+                .put("event_type_value", eventType)
+                .toString(),
+            accessToken = accessToken,
+        )
+    }
+
     private fun request(
         method: String,
         path: String,

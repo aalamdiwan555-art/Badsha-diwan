@@ -498,6 +498,38 @@ grant execute on function public.admin_set_banned(uuid, boolean, text) to authen
 revoke all on function public.admin_update_settings(integer, integer, integer) from public;
 grant execute on function public.admin_update_settings(integer, integer, integer) to authenticated;
 
+-- Playback telemetry is append-only and attributed from auth.uid(). The
+-- Android client can report lifecycle events, but cannot choose another user
+-- or grant access by writing directly to ad_events.
+create or replace function public.log_ad_event(
+  ad_type_value text,
+  event_type_value text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required';
+  end if;
+  if ad_type_value not in ('rewarded', 'interstitial', 'banner', 'floating_banner')
+     or event_type_value not in (
+       'requested', 'started', 'loaded', 'shown', 'clicked',
+       'playback_completed', 'failed', 'closed'
+     ) then
+    raise exception 'Unsupported ad event';
+  end if;
+
+  insert into public.ad_events (user_id, ad_type, event_type)
+  values (auth.uid(), ad_type_value, event_type_value);
+end;
+$$;
+
+revoke all on function public.log_ad_event(text, text) from public;
+grant execute on function public.log_ad_event(text, text) to authenticated;
+
 -- Reward completion is intentionally handled as one atomic server operation.
 -- The Android client should call this only after the ad provider reports a
 -- completed rewarded impression; it must never update profile counters locally.
