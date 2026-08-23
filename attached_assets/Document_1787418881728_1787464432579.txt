@@ -411,6 +411,17 @@ DETAILS:
   - Normalize descriptions and versions before caching
   - Clarify that administrator mutations are server-authorized rather than read-only
 
+--- CHECKPOINT 28: Remote Mode Execution Bridge ---
+DATE: 2026-08-23
+WHAT: Connected the selected remote mode to the native clicker engine
+WHY: Starting Autopilot must execute the administrator-selected mode instead of opening an unrelated generic local scenario list
+WHERE: RemoteModeInstaller, AutopilotHomeActivity, ScenarioActivity, ScenarioListFragment
+DETAILS:
+  - Convert supported portable click, tap, swipe, pause, and delay actions into local executable scenarios
+  - Update an existing local mode on repeat launches instead of creating duplicates
+  - Fail explicitly when a published mode contains an unsupported action type or no executable actions
+  - Auto-select and start the synced mode after permissions and consent checks
+
 ================================================================================
 KEY CONTACT & REFERENCES
 ================================================================================

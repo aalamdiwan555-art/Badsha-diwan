@@ -61,6 +61,9 @@ class ScenarioActivity : AppCompatActivity(), ScenarioListFragment.Listener {
 
         scenarioViewModel.stopScenario()
         scenarioViewModel.requestUserConsentIfNeeded(this)
+        supportFragmentManager.findFragmentById(R.id.fragment)
+            ?.let { it as? ScenarioListFragment }
+            ?.requestAutoStart(intent.getStringExtra(EXTRA_AUTOPILOT_SCENARIO_NAME))
 
         mediaProjectionRequest.registerForActivityResult(this)
 
@@ -130,5 +133,9 @@ class ScenarioActivity : AppCompatActivity(), ScenarioListFragment.Listener {
 
     private fun showProjectionDeniedToast() {
         Toast.makeText(this, R.string.toast_denied_screen_sharing_permission, Toast.LENGTH_SHORT).show()
+    }
+
+    companion object {
+        const val EXTRA_AUTOPILOT_SCENARIO_NAME = "autopilot_scenario_name"
     }
 }

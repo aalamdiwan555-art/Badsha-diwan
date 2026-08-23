@@ -83,6 +83,8 @@ class ScenarioListFragment : Fragment() {
     private lateinit var viewBinding: FragmentScenariosBinding
     /** Adapter displaying the click scenarios as a list. */
     private lateinit var scenariosAdapter: ScenarioAdapter
+    private var autoStartName: String? = null
+    private var autoStartTriggered = false
 
 
     /** The current dialog being displayed. Null if not displayed. */
@@ -234,6 +236,22 @@ class ScenarioListFragment : Fragment() {
         }
 
         scenariosAdapter.submitList(uiState.listContent)
+        val requestedName = autoStartName ?: return
+        if (autoStartTriggered) return
+        val requestedItem = uiState.listContent
+            .filterIsInstance<ScenarioListUiState.Item.ScenarioItem>()
+            .firstOrNull { it.displayName == requestedName }
+        if (requestedItem != null) {
+            autoStartTriggered = true
+            view?.post { onStartClicked(requestedItem) }
+        }
+    }
+
+    fun requestAutoStart(name: String?) {
+        autoStartName = name?.takeIf { it.isNotBlank() }
+        if (view != null && autoStartName != null) {
+            scenarioListViewModel.uiState.value?.let(::updateScenarioList)
+        }
     }
 
     private fun onConditionMigrationRequired(isRequired: Boolean) {

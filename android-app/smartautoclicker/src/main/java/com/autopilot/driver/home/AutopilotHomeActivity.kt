@@ -12,9 +12,12 @@ import com.autopilot.driver.auth.ModeSelectionActivity
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
 import com.autopilot.driver.data.remote.AutopilotSessionStore
 import com.autopilot.driver.data.remote.AuthResult
+import com.autopilot.driver.data.remote.RemoteModeInstaller
+import com.autopilot.driver.data.remote.ScenarioMode
 import com.autopilot.driver.data.remote.SupabaseRestClient
 import com.buzbuz.smartautoclicker.R
 import com.buzbuz.smartautoclicker.core.common.accessibility.domain.LocalAccessibilityServiceConnection
+import com.buzbuz.smartautoclicker.core.dumb.domain.IDumbRepository
 import com.buzbuz.smartautoclicker.scenarios.ScenarioActivity
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -31,12 +34,16 @@ class AutopilotHomeActivity : ComponentActivity() {
     @Inject
     lateinit var serviceConnection: LocalAccessibilityServiceConnection
 
+    @Inject
+    lateinit var dumbRepository: IDumbRepository
+
     private lateinit var modeValue: TextView
     private lateinit var subscriptionValue: TextView
     private lateinit var statusText: TextView
     private lateinit var startButton: Button
     private var hasActiveAccess = false
     private var hasLoadedProfile = false
+    private var selectedMode: ScenarioMode? = null
     private val refreshHandler = Handler(Looper.getMainLooper())
     private val refreshProfile = object : Runnable {
         override fun run() {
@@ -96,6 +103,9 @@ class AutopilotHomeActivity : ComponentActivity() {
                         is AuthResult.Authenticated -> {
                             hasLoadedProfile = true
                             hasActiveAccess = result.profile.hasActiveAccess()
+                            selectedMode = result.availableModes.firstOrNull {
+                                it.id == result.profile.selectedScenarioId
+                            }
                             modeValue.text = result.profile.selectedScenarioName
                                 ?: getString(R.string.home_no_mode)
                             subscriptionValue.text = result.profile.accessLabel()
@@ -123,7 +133,24 @@ class AutopilotHomeActivity : ComponentActivity() {
             statusText.setText(R.string.home_start_status)
             return
         }
-        startActivity(Intent(this, ScenarioActivity::class.java))
+        val mode = selectedMode
+        if (mode == null) {
+            statusText.setText(R.string.home_start_status)
+            return
+        }
+        statusText.setText(R.string.home_loading)
+        lifecycleScope.launch {
+            runCatching { RemoteModeInstaller(dumbRepository).install(mode) }
+                .onSuccess { localScenarioName ->
+                    startActivity(
+                        Intent(this@AutopilotHomeActivity, ScenarioActivity::class.java)
+                            .putExtra(ScenarioActivity.EXTRA_AUTOPILOT_SCENARIO_NAME, localScenarioName),
+                    )
+                }
+                .onFailure {
+                    statusText.text = it.message ?: getString(R.string.auth_generic_error)
+                }
+        }
     }
 
     private fun UserProfile.hasActiveAccess(): Boolean {
