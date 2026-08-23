@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
@@ -24,6 +25,7 @@ class ModeSelectionActivity : ComponentActivity() {
 
     private lateinit var modeList: LinearLayout
     private lateinit var statusText: TextView
+    private var selectedModeId: String? = null
 
     private val accountRepository by lazy {
         AutopilotAccountRepository(
@@ -49,7 +51,12 @@ class ModeSelectionActivity : ComponentActivity() {
                         statusText.setText(R.string.mode_empty)
                     } else {
                         statusText.visibility = View.GONE
+                        selectedModeId = result.profile.selectedScenarioId
                         result.availableModes.forEach(::addMode)
+                        result.profile.selectedScenarioName?.let {
+                            statusText.visibility = View.VISIBLE
+                            statusText.text = getString(R.string.mode_current, it)
+                        }
                     }
                 }
                 .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
@@ -58,7 +65,11 @@ class ModeSelectionActivity : ComponentActivity() {
 
     private fun addMode(mode: ScenarioMode) {
         val button = Button(this).apply {
-            text = mode.name
+            text = if (mode.id == selectedModeId) {
+                getString(R.string.mode_selected, mode.name)
+            } else {
+                mode.name
+            }
             contentDescription = mode.description ?: mode.name
             setOnClickListener { selectMode(this, mode) }
         }
@@ -70,13 +81,26 @@ class ModeSelectionActivity : ComponentActivity() {
         button.isEnabled = false
         lifecycleScope.launch {
             runCatching { accountRepository.selectMode(mode) }
-                .onSuccess { openClicker() }
+                .onSuccess {
+                    selectedModeId = mode.id
+                    Toast.makeText(
+                        this@ModeSelectionActivity,
+                        getString(R.string.mode_switched, mode.name),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    openClicker()
+                }
                 .onFailure {
-                    modeList.isEnabled = true
-                    button.isEnabled = true
+                    setModeButtonsEnabled(true)
                     statusText.visibility = View.VISIBLE
                     statusText.text = it.message ?: getString(R.string.mode_save_error)
                 }
+        }
+    }
+
+    private fun setModeButtonsEnabled(enabled: Boolean) {
+        for (index in 0 until modeList.childCount) {
+            modeList.getChildAt(index).isEnabled = enabled
         }
     }
 

@@ -479,3 +479,14 @@ DETAILS:
   - Profile data refreshes every five minutes while the screen remains visible
   - Scheduled callbacks are removed when the screen stops to avoid background work
   - Updated access state immediately controls whether Start is enabled
+
+--- CHECKPOINT 29: Mode Selection Feedback Improved ---
+DATE: 2026-08-23
+WHAT: Added active-mode indication and safer mode-switch feedback
+WHY: Users need confidence about which administrator-published mode is active
+WHERE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/auth/ModeSelectionActivity.kt, app strings
+DETAILS:
+  - The current mode is identified when the mode list loads
+  - The selected mode receives a visible Selected label
+  - Successful changes show a confirmation before returning Home
+  - Failed saves re-enable every mode option and preserve the previous selection
