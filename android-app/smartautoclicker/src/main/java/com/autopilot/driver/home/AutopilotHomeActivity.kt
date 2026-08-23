@@ -104,6 +104,9 @@ class AutopilotHomeActivity : ComponentActivity() {
 
     private fun loadProfile() {
         hasLoadedProfile = false
+        hasActiveAccess = false
+        selectedMode = null
+        startButton.isEnabled = false
         rewardProgress.visibility = View.GONE
         rewardButton.visibility = View.GONE
         statusText.setText(R.string.home_loading)

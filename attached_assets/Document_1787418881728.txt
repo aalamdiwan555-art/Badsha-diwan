@@ -664,3 +664,13 @@ DETAILS:
   - Assigns the administrator role only to the configured administrator email
   - Defaults all other new accounts to the user role
   - Uses a security-definer function and conflict protection for safe retries
+
+--- CHECKPOINT 44: Safe Home Refresh State Added ---
+DATE: 2026-08-23
+WHAT: Prevented stale access controls from remaining active during profile refresh
+WHY: A background refresh must not leave the previous subscription or mode state briefly able to launch automation
+WHERE: AutopilotHomeActivity
+DETAILS:
+  - Clears the active access and selected mode state before every profile request
+  - Disables Start immediately until the server confirms the current profile
+  - Keeps the existing server-side subscription and mode checks as the final authority

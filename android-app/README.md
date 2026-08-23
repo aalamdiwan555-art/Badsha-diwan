@@ -18,14 +18,18 @@
 
 </br>
  
-<p>Autopilot is an Android application for running administrator-published click and gesture modes. Users sign in, choose a read-only mode, and start or stop automation while administrators manage modes and account access from the app.
+<p>Autopilot is a native Android application for running administrator-published click and gesture modes. Users sign in, choose a read-only mode, and start or stop automation while administrators manage modes and account access from the app.
 </p>
 <p>The app is built on the Smart AutoClicker engine and keeps its proven click, swipe, and image-detection capabilities behind a remotely controlled Autopilot experience.
 </p>
 
 </br>
 
-## Key Features:
+## Autopilot features:
+* **Remote modes**: Administrators publish up to 15 validated modes that users can select and run without editing them locally.
+* **Secure access**: Supabase Auth, server-authorized profile changes, audited administrator actions, ban enforcement, and offline mode recovery.
+* **Free access model**: There are no paid plans. Eligible users can earn access through verified reward ads, or receive access directly from an administrator.
+* **Restricted roles**: Regular users get the focused Start/Stop experience; the administrator receives the in-app control center for modes and user access.
 * **Click and Swipes**: Automate clicks and swipes with precision by configuring press durations, swipe durations, and positions. Trigger actions on detected images to interact seamlessly with dynamic elements.
 * **Advanced Automation**: Enhance your automation scripts with advanced features like counters operations, Android Intents, and flow control, giving you unparalleled flexibility.
 * **Triggers**: Set up sophisticated triggers based on image detection, timers, counters, and Android broadcast receivers to perfectly tailor your automation tasks.
