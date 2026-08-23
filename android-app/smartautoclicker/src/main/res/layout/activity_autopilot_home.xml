@@ -53,6 +53,21 @@
             android:textColor="@android:color/white"
             android:textSize="18sp" />
 
+        <TextView
+            android:id="@+id/home_reward_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:textColor="#B8C5D6"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/home_reward_ad"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/home_reward_ad" />
+
         <Button
             android:id="@+id/home_start"
             android:layout_width="match_parent"

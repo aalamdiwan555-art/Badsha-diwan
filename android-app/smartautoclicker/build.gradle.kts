@@ -183,4 +183,6 @@ dependencies {
     implementation(project(":feature:smart-debugging"))
     implementation(project(":feature:dumb-config"))
     implementation(project(":feature:tutorial"))
+
+    playStoreImplementation(libs.unity.ads)
 }

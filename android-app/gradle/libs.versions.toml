@@ -51,6 +51,7 @@ googleUserMessaging = "4.0.0"
 googleGmsAds = "25.3.0"
 googlePlayReview = "2.0.2"
 googlePlayAssetDelivery = "2.3.0"
+unityAds = "4.12.0"
 
 # Tests only
 androidxArchCoreTesting = "2.2.0"
@@ -133,6 +134,7 @@ google-userMessaging = { group = "com.google.android.ump", name = "user-messagin
 google-gms-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "googleGmsAds" }
 google-play-review = { group = "com.google.android.play", name = "review", version.ref = "googlePlayReview" }
 google-play-asset-delivery = { group = "com.google.android.play", name = "asset-delivery", version.ref = "googlePlayAssetDelivery" }
+unity-ads = { group = "com.unity3d.ads", name = "unity-ads", version.ref = "unityAds" }
 google-play-asset-delivery-ktx = { group = "com.google.android.play", name = "asset-delivery-ktx", version.ref = "googlePlayAssetDelivery" }
 
 # Tests only

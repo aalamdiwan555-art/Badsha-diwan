@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.auth.ModeSelectionActivity
+import com.autopilot.driver.ads.RewardAdController
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
 import com.autopilot.driver.data.remote.AutopilotSessionStore
 import com.autopilot.driver.data.remote.AuthResult
@@ -41,6 +42,9 @@ class AutopilotHomeActivity : ComponentActivity() {
     private lateinit var subscriptionValue: TextView
     private lateinit var statusText: TextView
     private lateinit var startButton: Button
+    private lateinit var rewardButton: Button
+    private lateinit var rewardProgress: TextView
+    private val rewardAdController = RewardAdController()
     private var hasActiveAccess = false
     private var hasLoadedProfile = false
     private var selectedMode: ScenarioMode? = null
@@ -66,6 +70,9 @@ class AutopilotHomeActivity : ComponentActivity() {
         modeValue = findViewById(R.id.home_mode_value)
         subscriptionValue = findViewById(R.id.home_subscription_value)
         statusText = findViewById(R.id.home_status)
+        rewardProgress = findViewById(R.id.home_reward_progress)
+        rewardButton = findViewById(R.id.home_reward_ad)
+        rewardButton.setOnClickListener { showRewardAd() }
 
         startButton = findViewById(R.id.home_start)
         startButton.setOnClickListener { startClicker() }
@@ -116,12 +123,51 @@ class AutopilotHomeActivity : ComponentActivity() {
                             } else {
                                 getString(R.string.home_free_access)
                             }
+                            rewardProgress.text = getString(
+                                R.string.home_reward_progress,
+                                result.profile.adsWatchedToday,
+                            )
+                            rewardButton.isEnabled = !result.profile.isAdFree &&
+                                result.profile.adsWatchedToday < 20
                         }
                         null -> finish()
                     }
                 }
                 .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
         }
+    }
+
+    private fun showRewardAd() {
+        if (!hasLoadedProfile) return
+        rewardButton.isEnabled = false
+        statusText.setText(R.string.home_reward_loading)
+        rewardAdController.show(
+            activity = this,
+            onRewarded = {
+                statusText.setText(R.string.home_reward_claiming)
+                lifecycleScope.launch {
+                    runCatching { accountRepository.claimRewardAd() }
+                        .onSuccess { claim ->
+                            statusText.setText(
+                                if (claim.unlocked) {
+                                    R.string.home_reward_success
+                                } else {
+                                    R.string.home_reward_ad_counted
+                                },
+                            )
+                            loadProfile()
+                        }
+                        .onFailure {
+                            rewardButton.isEnabled = true
+                            statusText.text = it.message ?: getString(R.string.auth_generic_error)
+                        }
+                }
+            },
+            onError = {
+                rewardButton.isEnabled = true
+                statusText.text = it
+            },
+        )
     }
 
     private fun startClicker() {

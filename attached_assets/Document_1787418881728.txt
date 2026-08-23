@@ -459,6 +459,18 @@ DETAILS:
   - Rejected unauthenticated, banned, and ad-free accounts
   - Added Android request and response models without exposing any server secret
 
+--- CHECKPOINT 45: Rewarded Ad Playback Wired ---
+DATE: 2026-08-23
+WHAT: Added Unity rewarded-ad playback with server-only reward accounting
+WHY: Users need a real free-access path while the client must never grant access locally
+WHERE: Android Play Store/F-Droid source sets, home screen, and dependency catalog
+DETAILS:
+  - Added Unity Ads SDK playback for the fixed Android Game ID 6178983
+  - Claims reward access only after Unity reports a completed rewarded impression
+  - Added home-screen progress and loading, error, and secure-claim states
+  - Hides the action for ad-free users and caps the local action at the server's 20-ad limit
+  - F-Droid builds fail clearly instead of silently pretending a reward ad was shown
+
 --- CHECKPOINT 26: Subscription Access Gate Added ---
 DATE: 2026-08-23
 WHAT: Added subscription-aware start protection to the Autopilot home screen
