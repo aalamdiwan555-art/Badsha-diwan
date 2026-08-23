@@ -52,6 +52,7 @@ googleGmsAds = "25.3.0"
 googlePlayReview = "2.0.2"
 googlePlayAssetDelivery = "2.3.0"
 unityAds = "4.12.0"
+firebaseMessaging = "24.1.0"
 
 # Tests only
 androidxArchCoreTesting = "2.2.0"
@@ -127,6 +128,7 @@ google-protobuf-kotlin = { group = "com.google.protobuf", name = "protobuf-kotli
 android-billingClient = { group = "com.android.billingclient", name = "billing", version.ref = "androidBillingClient" }
 android-billingClient-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "androidBillingClient" }
 google-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "googleFirebaseBom" }
+google-firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 google-firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx", version.ref = "googleFirebaseCrashlytics" }
 google-firebase-crashlytics-ndk = { group = "com.google.firebase", name = "firebase-crashlytics-ndk", version.ref = "googleFirebaseCrashlyticsNdk" }
 google-dagger-hilt = { group = "com.google.dagger", name = "hilt-android", version.ref = "googleDaggerHilt" }
