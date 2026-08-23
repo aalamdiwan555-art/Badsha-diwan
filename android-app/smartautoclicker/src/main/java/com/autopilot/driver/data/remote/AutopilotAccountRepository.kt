@@ -138,6 +138,18 @@ class AutopilotAccountRepository(
         client.logAdEvent(accessToken, adType, eventType)
     }
 
+    suspend fun startClickSession(scenarioId: String): String {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot start a click session without an authenticated session")
+        return client.startClickSession(accessToken, scenarioId)
+    }
+
+    suspend fun finishClickSession(sessionId: String) {
+        val accessToken = sessionStore.accessToken
+            ?: return
+        client.finishClickSession(accessToken, sessionId)
+    }
+
     suspend fun loadUsers(): List<UserProfile> {
         val accessToken = sessionStore.accessToken
             ?: error("Cannot load users without an authenticated session")

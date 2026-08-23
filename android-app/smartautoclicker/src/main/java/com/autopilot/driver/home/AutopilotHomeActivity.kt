@@ -51,6 +51,7 @@ class AutopilotHomeActivity : ComponentActivity() {
     private var selectedMode: ScenarioMode? = null
     private var rewardAdsForOneDay = 20
     private var profileRequestInFlight = false
+    private var activeClickSessionId: String? = null
     private val refreshHandler = Handler(Looper.getMainLooper())
     private val refreshProfile = object : Runnable {
         override fun run() {
@@ -81,6 +82,7 @@ class AutopilotHomeActivity : ComponentActivity() {
         startButton.setOnClickListener { startClicker() }
         findViewById<Button>(R.id.home_stop).setOnClickListener {
             serviceConnection.getLocalService()?.stopScenario()
+            finishClickSession()
             statusText.setText(R.string.home_stop_status)
         }
         findViewById<Button>(R.id.home_switch_mode).setOnClickListener {
@@ -230,6 +232,9 @@ class AutopilotHomeActivity : ComponentActivity() {
         lifecycleScope.launch {
             runCatching { RemoteModeInstaller(dumbRepository).install(mode) }
                 .onSuccess { localScenarioName ->
+                    activeClickSessionId = runCatching {
+                        accountRepository.startClickSession(mode.id)
+                    }.getOrNull()
                     startActivity(
                         Intent(this@AutopilotHomeActivity, ScenarioActivity::class.java)
                             .putExtra(ScenarioActivity.EXTRA_AUTOPILOT_SCENARIO_NAME, localScenarioName),
@@ -238,6 +243,14 @@ class AutopilotHomeActivity : ComponentActivity() {
                 .onFailure {
                     statusText.text = it.message ?: getString(R.string.auth_generic_error)
                 }
+        }
+    }
+
+    private fun finishClickSession() {
+        val sessionId = activeClickSessionId ?: return
+        activeClickSessionId = null
+        lifecycleScope.launch {
+            runCatching { accountRepository.finishClickSession(sessionId) }
         }
     }
 

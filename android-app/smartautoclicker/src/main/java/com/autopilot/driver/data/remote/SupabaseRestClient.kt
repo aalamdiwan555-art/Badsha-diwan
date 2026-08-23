@@ -336,6 +336,28 @@ class SupabaseRestClient(
         )
     }
 
+    suspend fun startClickSession(accessToken: String, scenarioId: String): String =
+        withContext(Dispatchers.IO) {
+            JSONObject(
+                request(
+                    method = "POST",
+                    path = SupabaseConfig.START_CLICK_SESSION_RPC,
+                    body = JSONObject().put("scenario_id_value", scenarioId).toString(),
+                    accessToken = accessToken,
+                ),
+            ).getString("session_id")
+        }
+
+    suspend fun finishClickSession(accessToken: String, sessionId: String) =
+        withContext(Dispatchers.IO) {
+            request(
+                method = "POST",
+                path = SupabaseConfig.FINISH_CLICK_SESSION_RPC,
+                body = JSONObject().put("session_id_value", sessionId).toString(),
+                accessToken = accessToken,
+            )
+        }
+
     private fun request(
         method: String,
         path: String,

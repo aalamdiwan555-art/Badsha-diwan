@@ -530,6 +530,70 @@ $$;
 revoke all on function public.log_ad_event(text, text) from public;
 grant execute on function public.log_ad_event(text, text) to authenticated;
 
+create or replace function public.start_click_session(scenario_id_value uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  new_session public.click_sessions;
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required';
+  end if;
+  if exists (
+    select 1 from public.profiles
+    where id = auth.uid() and is_banned
+  ) then
+    raise exception 'This account has been disabled';
+  end if;
+  if not exists (
+    select 1 from public.scenarios
+    where id = scenario_id_value and is_active
+  ) then
+    raise exception 'Published mode not found';
+  end if;
+
+  insert into public.click_sessions (user_id, scenario_id)
+  values (auth.uid(), scenario_id_value)
+  returning * into new_session;
+
+  return jsonb_build_object(
+    'session_id', new_session.id,
+    'scenario_id', new_session.scenario_id,
+    'started_at', new_session.started_at
+  );
+end;
+$$;
+
+create or replace function public.finish_click_session(session_id_value uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required';
+  end if;
+
+  update public.click_sessions
+  set ended_at = coalesce(ended_at, now()),
+      duration_seconds = greatest(
+        0,
+        extract(epoch from (coalesce(ended_at, now()) - started_at))::integer
+      )
+  where id = session_id_value
+    and user_id = auth.uid();
+end;
+$$;
+
+revoke all on function public.start_click_session(uuid) from public;
+grant execute on function public.start_click_session(uuid) to authenticated;
+revoke all on function public.finish_click_session(uuid) from public;
+grant execute on function public.finish_click_session(uuid) to authenticated;
+
 -- Reward completion is intentionally handled as one atomic server operation.
 -- The Android client should call this only after the ad provider reports a
 -- completed rewarded impression; it must never update profile counters locally.

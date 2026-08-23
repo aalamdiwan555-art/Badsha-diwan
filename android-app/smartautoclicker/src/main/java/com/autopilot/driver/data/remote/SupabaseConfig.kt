@@ -26,6 +26,8 @@ object SupabaseConfig {
     const val ADMIN_SET_BANNED_RPC = "/rest/v1/rpc/admin_set_banned"
     const val ADMIN_UPDATE_SETTINGS_RPC = "/rest/v1/rpc/admin_update_settings"
     const val LOG_AD_EVENT_RPC = "/rest/v1/rpc/log_ad_event"
+    const val START_CLICK_SESSION_RPC = "/rest/v1/rpc/start_click_session"
+    const val FINISH_CLICK_SESSION_RPC = "/rest/v1/rpc/finish_click_session"
     const val CLAIM_REWARD_AD_RPC = "/rest/v1/rpc/claim_reward_ad"
 
     fun profilePath(userId: String): String =
