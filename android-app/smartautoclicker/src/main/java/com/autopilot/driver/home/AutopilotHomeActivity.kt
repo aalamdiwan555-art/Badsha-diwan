@@ -190,7 +190,7 @@ class AutopilotHomeActivity : ComponentActivity() {
                             )
                             rewardButton.isEnabled = !result.profile.isAdFree &&
                                 result.profile.adsWatchedToday < rewardAdsForOneDay
-                            interstitialAdController.maybeShow(
+                            adsManager.maybeShowInterstitial(
                                 activity = this@AutopilotHomeActivity,
                                 isAdFree = result.profile.isAdFree,
                                 intervalMinutes = settings?.interstitialIntervalMinutes ?: 2,
