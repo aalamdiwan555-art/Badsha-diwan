@@ -202,7 +202,17 @@ class AdminDashboardActivity : ComponentActivity() {
 
     private fun chooseGrantDuration(user: com.autopilot.driver.data.remote.UserProfile) {
         val durations = intArrayOf(1, 2, 3, 7, 15, 30, 90, 365, 99999)
-        val labels = arrayOf("1 day", "2 days", "3 days", "7 days", "15 days", "30 days", "90 days", "365 days", "Lifetime")
+        val labels = arrayOf(
+            "1 day",
+            "2 days",
+            "3 days",
+            "7 days",
+            "15 days",
+            "30 days",
+            "90 days",
+            "365 days",
+            "Lifetime",
+        )
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.admin_grant_title, user.email))
             .setItems(labels) { _, which ->

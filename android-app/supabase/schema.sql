@@ -9,7 +9,7 @@ create table if not exists public.profiles (
   email text unique not null,
   role text not null default 'user' check (role in ('admin', 'user')),
   subscription_status text not null default 'inactive'
-    check (subscription_status in ('active', 'inactive', 'expired', 'trial')),
+    check (subscription_status in ('active', 'inactive', 'expired', 'trial', 'lifetime')),
   subscription_expires_at timestamptz,
   is_ad_free boolean not null default false,
   ads_watched_today integer not null default 0,
@@ -263,14 +263,17 @@ begin
 
   if grant_duration_days = 99999 then
     expires_at_value := '2099-12-31T00:00:00Z'::timestamptz;
-  elsif grant_duration_days in (1, 2, 3, 7, 15, 30, 90, 365) then
+  elsif grant_duration_days between 1 and 3650 then
     expires_at_value := now() + make_interval(days => grant_duration_days);
   else
     raise exception 'Unsupported subscription duration';
   end if;
 
   update public.profiles
-  set subscription_status = 'active',
+  set subscription_status = case
+        when grant_duration_days = 99999 then 'lifetime'
+        else 'active'
+      end,
       subscription_expires_at = expires_at_value,
       updated_at = now()
   where id = target_user_id;

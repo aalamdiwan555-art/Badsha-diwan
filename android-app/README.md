@@ -1,7 +1,7 @@
 <p align="center">
   <img src="https://github.com/Nain57/SmartAutoClicker/blob/master/smartautoclicker/src/main/ic_smart_auto_clicker-playstore.png?raw=true" height="64">
-  <h3 align="center">Klick'r - Smart AutoClicker</h3>
-  <p align="center">An Autoclicker Based On Image Detection
+  <h3 align="center">Autopilot</h3>
+  <p align="center">A remotely managed Android auto-clicker
   </p>
 </p>
 
@@ -18,9 +18,9 @@
 
 </br>
  
-<p>Klick'r is an open-source Android application designed to automate repetitive tasks effortlessly. Formerly known as Smart AutoClicker, Klick'r offers unique image detection capabilities alongside traditional auto-clicking functionalities, providing a versatile solution for all your automation needs.
+<p>Autopilot is an Android application for running administrator-published click and gesture modes. Users sign in, choose a read-only mode, and start or stop automation while administrators manage modes and account access from the app.
 </p>
-<p>Whether you’re a gamer automating in-game actions, a tester simulating user interactions, or anyone performing repetitive clicking tasks, Klick'r offers both image detection for sophisticated automation and a Regular Mode for straightforward auto-clicking.
+<p>The app is built on the Smart AutoClicker engine and keeps its proven click, swipe, and image-detection capabilities behind a remotely controlled Autopilot experience.
 </p>
 
 </br>
