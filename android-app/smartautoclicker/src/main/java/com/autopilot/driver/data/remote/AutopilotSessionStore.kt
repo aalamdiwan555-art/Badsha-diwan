@@ -9,6 +9,7 @@ import android.content.Context
  * private preferences. The server remains the source of truth for profile data.
  */
 class AutopilotSessionStore(context: Context) {
+    val context: Context = context.applicationContext
     private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
     val accessToken: String?
