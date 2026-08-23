@@ -56,12 +56,18 @@ class AutopilotAccountRepository(
         client.requestPasswordReset(email.trim())
     }
 
-    suspend fun createScenario(name: String, description: String?) {
+    suspend fun createScenario(name: String, description: String?, scenarioData: org.json.JSONObject) {
         val accessToken = sessionStore.accessToken
             ?: error("Cannot create a mode without an authenticated session")
         val adminId = sessionStore.userId
             ?: error("Cannot create a mode without an authenticated user")
-        client.createScenario(accessToken, adminId, name.trim(), description?.trim())
+        client.createScenario(
+            accessToken,
+            adminId,
+            name.trim(),
+            description?.trim(),
+            scenarioData,
+        )
     }
 
     suspend fun deleteScenario(scenarioId: String) {
