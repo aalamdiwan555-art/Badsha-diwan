@@ -96,8 +96,7 @@ class ModeSelectionActivity : ComponentActivity() {
     }
 
     private fun selectMode(button: Button, mode: ScenarioMode) {
-        modeList.isEnabled = false
-        button.isEnabled = false
+        setModeButtonsEnabled(false)
         statusText.visibility = View.VISIBLE
         statusText.setText(R.string.mode_loading)
         lifecycleScope.launch {
