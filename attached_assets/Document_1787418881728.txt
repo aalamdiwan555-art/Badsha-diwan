@@ -598,3 +598,12 @@ DETAILS:
   - Added profile ban state and optional ban reason fields
   - Added admin-only RPC that prevents self-banning and records audit details
   - Added ban/unban buttons and optional reason dialog to the administrator user list
+
+--- CHECKPOINT 40: Stronger Scenario Validation Added ---
+DATE: 2026-08-23
+WHAT: Added bounded validation for administrator scenario definitions
+WHY: A valid JSON object alone is not enough to safely publish executable actions
+DETAILS:
+  - Limits scenario payloads to 256 KiB and 500 actions
+  - Requires every action to be an object with a non-empty bounded type
+  - Rejects non-finite numeric values recursively

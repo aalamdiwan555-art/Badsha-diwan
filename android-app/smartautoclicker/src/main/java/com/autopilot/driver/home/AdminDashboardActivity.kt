@@ -14,6 +14,7 @@ import com.autopilot.driver.data.remote.AutopilotAccountRepository
 import com.autopilot.driver.data.remote.AutopilotSessionStore
 import com.autopilot.driver.data.remote.AuthResult
 import com.autopilot.driver.data.remote.SupabaseRestClient
+import com.autopilot.driver.data.remote.ScenarioValidator
 import com.buzbuz.smartautoclicker.R
 import kotlinx.coroutines.launch
 
@@ -274,7 +275,7 @@ class AdminDashboardActivity : ComponentActivity() {
             return
         }
         val scenarioData = runCatching { org.json.JSONObject(scenarioJson) }.getOrNull()
-        if (scenarioData == null || !scenarioData.has("actions") || scenarioData.optJSONArray("actions") == null) {
+        if (scenarioData == null || !ScenarioValidator.validate(scenarioData)) {
             statusText.setText(R.string.admin_invalid_scenario)
             return
         }

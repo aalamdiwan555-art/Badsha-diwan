@@ -48,7 +48,7 @@
     <string name="admin_save">Save</string>
     <string name="admin_edit_mode">Edit %1$s</string>
     <string name="admin_scenario_json_hint">Scenario JSON with an actions array</string>
-    <string name="admin_invalid_scenario">Use valid JSON containing an actions array.</string>
+    <string name="admin_invalid_scenario">Use JSON with up to 500 actions. Every action needs a type and finite numeric values.</string>
     <string name="admin_mode_updated">Mode updated.</string>
     <string name="admin_users_title">Users</string>
     <string name="admin_user_item">%1$s · %2$s</string>
