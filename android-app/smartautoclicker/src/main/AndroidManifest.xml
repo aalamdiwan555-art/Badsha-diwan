@@ -41,6 +41,10 @@
 
         <activity
             android:name="${scenarioActivity}"
+            android:exported="false" />
+
+        <activity
+            android:name="com.autopilot.driver.auth.AutopilotWelcomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

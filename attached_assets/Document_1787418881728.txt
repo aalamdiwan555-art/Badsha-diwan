@@ -401,6 +401,17 @@ DETAILS:
   - Added active mode loading and selected-mode persistence
   - Kept all server-side secret keys out of the Android client
 
+--- CHECKPOINT 28: Autopilot Authentication Entry Point Added ---
+DATE: 2026-08-23
+WHAT: Added a native Autopilot welcome and authentication screen
+WHY: The app should begin with the secure account flow instead of exposing the original local scenario manager as its launcher screen
+WHERE: Android manifest, authentication activity, welcome layout, app resources
+DETAILS:
+  - Added sign-in and account creation controls
+  - Added saved-session restoration before opening the clicker experience
+  - Added clear validation and email-confirmation feedback
+  - Kept the existing accessibility engine behind the authenticated entry point
+
 ================================================================================
 KEY CONTACT & REFERENCES
 ================================================================================
