@@ -113,6 +113,7 @@
     <string name="home_profile">View profile</string>
     <string name="home_loading">Loading your Autopilot profile…</string>
     <string name="home_stop_status">Stop requested.</string>
+    <string name="home_overlay_permission_required">Allow display over other apps to show the running status.</string>
     <string name="home_start_status">Choose a Mode before starting.</string>
     <string name="profile_title">Your profile</string>
     <string name="profile_email_label">Signed in as</string>
