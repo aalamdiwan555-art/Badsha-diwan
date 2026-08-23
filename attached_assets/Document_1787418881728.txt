@@ -684,3 +684,13 @@ DETAILS:
   - Replaced inherited tutorial and project references with Autopilot wording
   - Kept the README focused on the current remote-mode product
   - Removed an obsolete upstream obfuscation link from the support section
+
+--- CHECKPOINT 46: Administrator Global Settings Added ---
+DATE: 2026-08-23
+WHAT: Added secure controls for the global ad and trial settings
+WHY: Administrators need to tune the free-access experience without editing the database directly
+WHERE: Supabase schema, Android REST client, account repository, and admin dashboard
+DETAILS:
+  - Added an audited administrator RPC for interval, reward threshold, and trial duration
+  - Added range validation on both the Android form and the database boundary
+  - Added settings loading and saving to the administrator control center

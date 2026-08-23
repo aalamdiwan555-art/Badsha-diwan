@@ -18,11 +18,13 @@ object SupabaseConfig {
         "/rest/v1/scenarios?select=*&is_active=eq.true&order=created_at.asc"
     const val SCENARIOS_TABLE_PATH = "/rest/v1/scenarios"
     const val PROFILES_PATH = "/rest/v1/profiles?select=*&order=created_at.asc"
+    const val APP_SETTINGS_PATH = "/rest/v1/app_settings?select=*&id=eq.1"
     const val SELECT_SCENARIO_RPC = "/rest/v1/rpc/select_scenario"
     const val CLEAR_SELECTED_SCENARIO_RPC = "/rest/v1/rpc/clear_selected_scenario"
     const val ADMIN_GRANT_SUBSCRIPTION_RPC = "/rest/v1/rpc/admin_grant_subscription"
     const val ADMIN_SET_AD_FREE_RPC = "/rest/v1/rpc/admin_set_ad_free"
     const val ADMIN_SET_BANNED_RPC = "/rest/v1/rpc/admin_set_banned"
+    const val ADMIN_UPDATE_SETTINGS_RPC = "/rest/v1/rpc/admin_update_settings"
     const val CLAIM_REWARD_AD_RPC = "/rest/v1/rpc/claim_reward_ad"
 
     fun profilePath(userId: String): String =

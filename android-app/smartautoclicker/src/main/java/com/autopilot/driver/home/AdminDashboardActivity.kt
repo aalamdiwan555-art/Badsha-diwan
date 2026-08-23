@@ -33,6 +33,9 @@ class AdminDashboardActivity : ComponentActivity() {
     private lateinit var userList: LinearLayout
     private lateinit var modeNameInput: EditText
     private lateinit var modeDescriptionInput: EditText
+    private lateinit var interstitialIntervalInput: EditText
+    private lateinit var rewardAdsInput: EditText
+    private lateinit var trialDaysInput: EditText
 
     private val accountRepository by lazy {
         AutopilotAccountRepository(
@@ -50,9 +53,13 @@ class AdminDashboardActivity : ComponentActivity() {
         userList = findViewById(R.id.admin_user_list)
         modeNameInput = findViewById(R.id.admin_mode_name)
         modeDescriptionInput = findViewById(R.id.admin_mode_description)
+        interstitialIntervalInput = findViewById(R.id.admin_interstitial_interval)
+        rewardAdsInput = findViewById(R.id.admin_reward_ads)
+        trialDaysInput = findViewById(R.id.admin_trial_days)
 
         findViewById<Button>(R.id.admin_refresh).setOnClickListener { loadDashboard() }
         findViewById<Button>(R.id.admin_create_mode).setOnClickListener { createMode() }
+        findViewById<Button>(R.id.admin_save_settings).setOnClickListener { saveSettings() }
         findViewById<Button>(R.id.admin_logout).setOnClickListener {
             accountRepository.signOut()
             startActivity(Intent(this, AutopilotWelcomeActivity::class.java))
@@ -109,6 +116,20 @@ class AdminDashboardActivity : ComponentActivity() {
                             R.string.admin_mode_count,
                             result.availableModes.size,
                         )
+                        lifecycleScope.launch {
+                            runCatching { accountRepository.loadAppSettings() }
+                                .onSuccess { settings ->
+                                    interstitialIntervalInput.setText(
+                                        settings.interstitialIntervalMinutes.toString(),
+                                    )
+                                    rewardAdsInput.setText(settings.rewardAdsForOneDay.toString())
+                                    trialDaysInput.setText(settings.trialDays.toString())
+                                }
+                                .onFailure {
+                                    statusText.text = it.message
+                                        ?: getString(R.string.auth_generic_error)
+                                }
+                        }
                         modeList.removeAllViews()
                         result.availableModes.forEach { mode ->
                             modeList.addView(LinearLayout(this@AdminDashboardActivity).apply {
@@ -138,6 +159,31 @@ class AdminDashboardActivity : ComponentActivity() {
                     }
                 }
                 .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
+        }
+    }
+
+    private fun saveSettings() {
+        val interstitialInterval = interstitialIntervalInput.text.toString().toIntOrNull()
+        val rewardAds = rewardAdsInput.text.toString().toIntOrNull()
+        val trialDays = trialDaysInput.text.toString().toIntOrNull()
+        if (interstitialInterval == null || interstitialInterval !in 1..60 ||
+            rewardAds == null || rewardAds !in 1..100 ||
+            trialDays == null || trialDays !in 0..30
+        ) {
+            statusText.setText(R.string.admin_invalid_settings)
+            return
+        }
+
+        findViewById<Button>(R.id.admin_save_settings).isEnabled = false
+        lifecycleScope.launch {
+            runCatching {
+                accountRepository.updateAppSettings(interstitialInterval, rewardAds, trialDays)
+            }.onSuccess {
+                statusText.setText(R.string.admin_settings_saved)
+            }.onFailure {
+                statusText.text = it.message ?: getString(R.string.auth_generic_error)
+            }
+            findViewById<Button>(R.id.admin_save_settings).isEnabled = true
         }
     }
 

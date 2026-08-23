@@ -73,6 +73,13 @@
     <string name="admin_mode_limit">You can publish up to 15 modes.</string>
     <string name="admin_mode_created">Mode published.</string>
     <string name="admin_mode_deleted">Deleted %1$s.</string>
+    <string name="admin_settings_title">Global settings</string>
+    <string name="admin_interstitial_interval_hint">Interstitial interval (1–60 minutes)</string>
+    <string name="admin_reward_ads_hint">Reward ads for one day (1–100)</string>
+    <string name="admin_trial_days_hint">Trial duration (0–30 days)</string>
+    <string name="admin_save_settings">Save settings</string>
+    <string name="admin_settings_saved">Global settings saved.</string>
+    <string name="admin_invalid_settings">Use an interval from 1–60, reward ads from 1–100, and trial days from 0–30.</string>
     <string name="mode_title">Choose your Mode</string>
     <string name="mode_subtitle">Select an administrator-published mode to continue.</string>
     <string name="mode_loading">Loading available modes…</string>

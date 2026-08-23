@@ -99,6 +99,27 @@ class AutopilotAccountRepository(
         client.setBanned(accessToken, userId, banned, reason?.trim())
     }
 
+    suspend fun loadAppSettings(): AppSettings {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot load settings without an authenticated session")
+        return client.fetchAppSettings(accessToken)
+    }
+
+    suspend fun updateAppSettings(
+        interstitialIntervalMinutes: Int,
+        rewardAdsForOneDay: Int,
+        trialDays: Int,
+    ) {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot update settings without an authenticated session")
+        client.updateAppSettings(
+            accessToken,
+            interstitialIntervalMinutes,
+            rewardAdsForOneDay,
+            trialDays,
+        )
+    }
+
     suspend fun claimRewardAd(): RewardAdClaim {
         val accessToken = sessionStore.accessToken
             ?: error("Cannot claim a reward without an authenticated session")

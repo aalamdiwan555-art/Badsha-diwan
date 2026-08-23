@@ -275,6 +275,31 @@ class SupabaseRestClient(
         )
     }
 
+    suspend fun fetchAppSettings(accessToken: String): AppSettings =
+        withContext(Dispatchers.IO) {
+            val rows = JSONArray(request("GET", SupabaseConfig.APP_SETTINGS_PATH, null, accessToken))
+            if (rows.length() == 0) error("App settings are not configured")
+            rows.getJSONObject(0).toAppSettings()
+        }
+
+    suspend fun updateAppSettings(
+        accessToken: String,
+        interstitialIntervalMinutes: Int,
+        rewardAdsForOneDay: Int,
+        trialDays: Int,
+    ) = withContext(Dispatchers.IO) {
+        request(
+            method = "POST",
+            path = SupabaseConfig.ADMIN_UPDATE_SETTINGS_RPC,
+            body = JSONObject()
+                .put("new_interstitial_interval_minutes", interstitialIntervalMinutes)
+                .put("new_reward_ads_for_one_day", rewardAdsForOneDay)
+                .put("new_trial_days", trialDays)
+                .toString(),
+            accessToken = accessToken,
+        )
+    }
+
     suspend fun claimRewardAd(accessToken: String): RewardAdClaim =
         withContext(Dispatchers.IO) {
             val response = JSONObject(
@@ -378,6 +403,12 @@ data class RewardAdClaim(
     val subscriptionExpiresAt: String?,
 )
 
+data class AppSettings(
+    val interstitialIntervalMinutes: Int,
+    val rewardAdsForOneDay: Int,
+    val trialDays: Int,
+)
+
 private fun JSONObject.toUserProfile() = UserProfile(
     id = getString("id"),
     email = getString("email"),
@@ -393,4 +424,10 @@ private fun JSONObject.toUserProfile() = UserProfile(
         .takeIf { it.isNotBlank() && it != "null" },
     isBanned = optBoolean("is_banned", false),
     banReason = optString("ban_reason").takeIf { it.isNotBlank() && it != "null" },
+)
+
+private fun JSONObject.toAppSettings() = AppSettings(
+    interstitialIntervalMinutes = optInt("interstitial_interval_minutes", 2),
+    rewardAdsForOneDay = optInt("reward_ads_for_one_day", 20),
+    trialDays = optInt("trial_days", 3),
 )

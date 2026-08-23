@@ -422,6 +422,54 @@ begin
 end;
 $$;
 
+create or replace function public.admin_update_settings(
+  new_interstitial_interval_minutes integer,
+  new_reward_ads_for_one_day integer,
+  new_trial_days integer
+)
+returns public.app_settings
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  updated_settings public.app_settings;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required';
+  end if;
+  if new_interstitial_interval_minutes not between 1 and 60
+     or new_reward_ads_for_one_day not between 1 and 100
+     or new_trial_days not between 0 and 30 then
+    raise exception 'Settings are outside the supported range';
+  end if;
+
+  update public.app_settings
+  set interstitial_interval_minutes = new_interstitial_interval_minutes,
+      reward_ads_for_one_day = new_reward_ads_for_one_day,
+      trial_days = new_trial_days,
+      updated_at = now()
+  where id = 1
+  returning * into updated_settings;
+
+  if not found then
+    raise exception 'App settings are not configured';
+  end if;
+
+  insert into public.admin_logs (admin_id, action, details)
+  values (
+    auth.uid(),
+    'update_app_settings',
+    jsonb_build_object(
+      'interstitial_interval_minutes', new_interstitial_interval_minutes,
+      'reward_ads_for_one_day', new_reward_ads_for_one_day,
+      'trial_days', new_trial_days
+    )
+  );
+  return updated_settings;
+end;
+$$;
+
 -- These SECURITY DEFINER functions must not be callable anonymously. Their
 -- internal admin check remains the authorization boundary for signed-in users.
 revoke all on function public.admin_grant_subscription(uuid, integer, text) from public;
@@ -434,6 +482,8 @@ revoke all on function public.admin_set_ad_free(uuid, boolean) from public;
 grant execute on function public.admin_set_ad_free(uuid, boolean) to authenticated;
 revoke all on function public.admin_set_banned(uuid, boolean, text) from public;
 grant execute on function public.admin_set_banned(uuid, boolean, text) to authenticated;
+revoke all on function public.admin_update_settings(integer, integer, integer) from public;
+grant execute on function public.admin_update_settings(integer, integer, integer) to authenticated;
 
 -- Reward completion is intentionally handled as one atomic server operation.
 -- The Android client should call this only after the ad provider reports a
