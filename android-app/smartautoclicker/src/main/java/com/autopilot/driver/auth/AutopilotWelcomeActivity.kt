@@ -12,6 +12,7 @@ import com.autopilot.driver.data.remote.AutopilotAccountRepository
 import com.autopilot.driver.data.remote.AutopilotSessionStore
 import com.autopilot.driver.data.remote.AuthResult
 import com.autopilot.driver.data.remote.SupabaseRestClient
+import com.autopilot.driver.home.AdminDashboardActivity
 import com.buzbuz.smartautoclicker.R
 import kotlinx.coroutines.launch
 
@@ -100,7 +101,9 @@ class AutopilotWelcomeActivity : ComponentActivity() {
     }
 
     private fun openNextScreen(result: AuthResult.Authenticated) {
-        val destination = if (result.profile.selectedScenarioId == null) {
+        val destination = if (result.profile.role == "admin") {
+            AdminDashboardActivity::class.java
+        } else if (result.profile.selectedScenarioId == null) {
             ModeSelectionActivity::class.java
         } else {
             com.autopilot.driver.home.AutopilotHomeActivity::class.java

@@ -65,6 +65,10 @@
             android:exported="false" />
 
         <activity
+            android:name="com.autopilot.driver.home.AdminDashboardActivity"
+            android:exported="false" />
+
+        <activity
             android:name="com.buzbuz.smartautoclicker.settings.SettingsActivity"
             android:exported="false" />
 

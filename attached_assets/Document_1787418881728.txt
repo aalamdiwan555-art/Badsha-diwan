@@ -532,3 +532,14 @@ DETAILS:
   - Added a Forgot password action that validates the email field and shows progress
   - Uses a non-enumerating success message so the UI does not reveal whether an email exists
   - Reset failures use the existing safe Supabase error parsing path
+
+--- CHECKPOINT 34: Administrator Entry Point Added ---
+DATE: 2026-08-23
+WHAT: Added a server-profile role gate and administrator-only control center
+WHY: Admin and user experiences must diverge without exposing administrator controls to regular users
+WHERE: Welcome routing, admin dashboard activity/layout, manifest, mode flow and strings
+DETAILS:
+  - Admin routing uses the profile role returned through the authenticated Supabase request
+  - Regular users continue to the restricted mode and Start/Stop experience
+  - The dashboard verifies the role again when it loads
+  - Administrator mode data is read-only until secure server-authorized mutation endpoints are added
