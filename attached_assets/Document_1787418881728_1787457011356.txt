@@ -479,3 +479,14 @@ DETAILS:
   - Profile shows signed-in email, subscription status, daily reward-ad count, and ad-free state
   - Logout clears the local session and returns to the authentication entry point
   - Home screen links to the profile without exposing scenario editing or admin actions
+
+--- CHECKPOINT 28: Home Profile Refresh Added ---
+DATE: 2026-08-23
+WHAT: Added automatic profile refresh while the user home screen is visible
+WHY: Subscription and ad-free changes must reach the device without requiring an app restart
+WHERE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/home/AutopilotHomeActivity.kt
+DETAILS:
+  - Profile data refreshes when the home screen starts
+  - Profile data refreshes every five minutes while the screen remains visible
+  - Scheduled callbacks are removed when the screen stops to avoid background work
+  - Updated access state immediately controls whether Start is enabled

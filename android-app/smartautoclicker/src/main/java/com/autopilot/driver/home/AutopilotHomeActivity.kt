@@ -2,6 +2,8 @@ package com.autopilot.driver.home
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -35,6 +37,13 @@ class AutopilotHomeActivity : ComponentActivity() {
     private lateinit var startButton: Button
     private var hasActiveAccess = false
     private var hasLoadedProfile = false
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshProfile = object : Runnable {
+        override fun run() {
+            loadProfile()
+            refreshHandler.postDelayed(this, PROFILE_REFRESH_INTERVAL_MS)
+        }
+    }
 
     private val accountRepository by lazy {
         AutopilotAccountRepository(
@@ -65,6 +74,17 @@ class AutopilotHomeActivity : ComponentActivity() {
         }
 
         loadProfile()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        refreshHandler.removeCallbacks(refreshProfile)
+        refreshHandler.postDelayed(refreshProfile, PROFILE_REFRESH_INTERVAL_MS)
+    }
+
+    override fun onStop() {
+        refreshHandler.removeCallbacks(refreshProfile)
+        super.onStop()
     }
 
     private fun loadProfile() {
@@ -120,5 +140,9 @@ class AutopilotHomeActivity : ComponentActivity() {
             return getString(R.string.home_access_expired)
         }
         return getString(R.string.home_subscription_value, subscriptionStatus)
+    }
+
+    private companion object {
+        const val PROFILE_REFRESH_INTERVAL_MS = 5 * 60 * 1000L
     }
 }
