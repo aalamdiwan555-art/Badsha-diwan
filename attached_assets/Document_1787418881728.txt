@@ -704,3 +704,14 @@ DETAILS:
   - Reward claims now read the configured threshold inside the atomic server transaction
   - Home and profile progress displays use the current configured threshold
   - Reward claim responses return the effective threshold for immediate client refresh
+
+--- CHECKPOINT 48: In-App Banner Ads Added ---
+DATE: 2026-08-23
+WHAT: Added persistent in-app banner ad support for the authenticated home screen
+WHY: The free product requires visible banner inventory while honoring administrator ad-free access
+WHERE: Android ad abstraction, Play Store/F-Droid implementations, home layout and activity
+DETAILS:
+  - Added a flavor-safe banner ad interface and Play Store Unity banner controller
+  - Added a no-op F-Droid implementation so open-source builds remain ad-free
+  - Added banner lifecycle cleanup and telemetry for requested, loaded, shown, clicked, failed, and closed events
+  - Ad-free profiles skip banner loading and hide the banner container completely

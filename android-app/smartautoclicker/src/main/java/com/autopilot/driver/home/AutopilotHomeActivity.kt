@@ -6,10 +6,12 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.auth.ModeSelectionActivity
+import com.autopilot.driver.ads.BannerAdController
 import com.autopilot.driver.ads.InterstitialAdController
 import com.autopilot.driver.ads.RewardAdController
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
@@ -46,8 +48,10 @@ class AutopilotHomeActivity : ComponentActivity() {
     private lateinit var startButton: Button
     private lateinit var rewardButton: Button
     private lateinit var rewardProgress: TextView
+    private lateinit var bannerContainer: FrameLayout
     private val rewardAdController = RewardAdController()
     private val interstitialAdController = InterstitialAdController()
+    private val bannerAdController = BannerAdController()
     private var hasActiveAccess = false
     private var hasLoadedProfile = false
     private var selectedMode: ScenarioMode? = null
@@ -77,6 +81,7 @@ class AutopilotHomeActivity : ComponentActivity() {
         subscriptionValue = findViewById(R.id.home_subscription_value)
         statusText = findViewById(R.id.home_status)
         rewardProgress = findViewById(R.id.home_reward_progress)
+        bannerContainer = findViewById(R.id.home_banner_container)
         rewardButton = findViewById(R.id.home_reward_ad)
         rewardButton.setOnClickListener { showRewardAd() }
 
@@ -106,6 +111,11 @@ class AutopilotHomeActivity : ComponentActivity() {
     override fun onStop() {
         refreshHandler.removeCallbacks(refreshProfile)
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        bannerAdController.destroy(bannerContainer)
+        super.onDestroy()
     }
 
     private fun loadProfile(showLoading: Boolean = true) {
@@ -148,6 +158,22 @@ class AutopilotHomeActivity : ComponentActivity() {
                                 View.GONE
                             } else {
                                 View.VISIBLE
+                            }
+                            if (result.profile.isAdFree) {
+                                bannerAdController.hide(bannerContainer)
+                            } else {
+                                bannerAdController.show(
+                                    activity = this@AutopilotHomeActivity,
+                                    container = bannerContainer,
+                                    isAdFree = false,
+                                    onEvent = { event ->
+                                        lifecycleScope.launch {
+                                            runCatching {
+                                                accountRepository.logAdEvent("banner", event)
+                                            }
+                                        }
+                                    },
+                                )
                             }
                             rewardProgress.visibility = adVisibility
                             rewardButton.visibility = adVisibility
