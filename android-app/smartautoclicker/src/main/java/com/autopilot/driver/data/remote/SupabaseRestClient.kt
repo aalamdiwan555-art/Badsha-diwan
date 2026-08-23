@@ -19,6 +19,27 @@ class SupabaseRestClient(
     private val projectUrl: String = SupabaseConfig.PROJECT_URL,
     private val publishableKey: String = SupabaseConfig.PUBLISHABLE_KEY,
 ) {
+    suspend fun signUp(email: String, password: String): AuthSession =
+        withContext(Dispatchers.IO) {
+            val response = JSONObject(request(
+                method = "POST",
+                path = SupabaseConfig.AUTH_SIGN_UP_PATH,
+                body = JSONObject()
+                    .put("email", email)
+                    .put("password", password)
+                    .toString(),
+                accessToken = null,
+            ))
+
+            AuthSession(
+                accessToken = response.optString("access_token"),
+                refreshToken = response.optString("refresh_token").takeIf { it.isNotBlank() },
+                userId = response.optJSONObject("user")?.optString("id"),
+                email = response.optJSONObject("user")?.optString("email"),
+                requiresEmailConfirmation = response.optString("access_token").isBlank(),
+            )
+        }
+
     suspend fun signIn(email: String, password: String): AuthSession =
         withContext(Dispatchers.IO) {
             val body = JSONObject()
@@ -40,6 +61,51 @@ class SupabaseRestClient(
                 email = response.optJSONObject("user")?.optString("email"),
             )
         }
+
+    suspend fun fetchProfile(accessToken: String, userId: String): UserProfile? =
+        withContext(Dispatchers.IO) {
+            val rows = JSONArray(
+                request(
+                    method = "GET",
+                    path = SupabaseConfig.profilePath(userId),
+                    body = null,
+                    accessToken = accessToken,
+                ),
+            )
+            if (rows.length() == 0) return@withContext null
+
+            val row = rows.getJSONObject(0)
+            UserProfile(
+                id = row.getString("id"),
+                email = row.getString("email"),
+                role = row.optString("role", "user"),
+                subscriptionStatus = row.optString("subscription_status", "inactive"),
+                subscriptionExpiresAt = row.optString("subscription_expires_at")
+                    .takeIf { it.isNotBlank() && it != "null" },
+                isAdFree = row.optBoolean("is_ad_free", false),
+                adsWatchedToday = row.optInt("ads_watched_today", 0),
+                selectedScenarioId = row.optString("selected_scenario_id")
+                    .takeIf { it.isNotBlank() && it != "null" },
+                selectedScenarioName = row.optString("selected_scenario_name")
+                    .takeIf { it.isNotBlank() && it != "null" },
+            )
+        }
+
+    suspend fun selectScenario(
+        accessToken: String,
+        userId: String,
+        scenario: ScenarioMode,
+    ) = withContext(Dispatchers.IO) {
+        request(
+            method = "PATCH",
+            path = SupabaseConfig.updateProfilePath(userId),
+            body = JSONObject()
+                .put("selected_scenario_id", scenario.id)
+                .put("selected_scenario_name", scenario.name)
+                .toString(),
+            accessToken = accessToken,
+        )
+    }
 
     suspend fun fetchActiveScenarios(accessToken: String): List<ScenarioMode> =
         withContext(Dispatchers.IO) {
@@ -111,6 +177,19 @@ data class AuthSession(
     val refreshToken: String?,
     val userId: String?,
     val email: String?,
+    val requiresEmailConfirmation: Boolean = false,
+)
+
+data class UserProfile(
+    val id: String,
+    val email: String,
+    val role: String,
+    val subscriptionStatus: String,
+    val subscriptionExpiresAt: String?,
+    val isAdFree: Boolean,
+    val adsWatchedToday: Int,
+    val selectedScenarioId: String?,
+    val selectedScenarioName: String?,
 )
 
 data class ScenarioMode(

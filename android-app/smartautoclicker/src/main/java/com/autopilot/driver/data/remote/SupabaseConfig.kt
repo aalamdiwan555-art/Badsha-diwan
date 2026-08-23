@@ -11,6 +11,13 @@ object SupabaseConfig {
     const val PUBLISHABLE_KEY = "sb_publishable_djOPp-ptG00MCdzNxXxL7A_Hq27r9BN"
 
     const val AUTH_TOKEN_PATH = "/auth/v1/token?grant_type=password"
+    const val AUTH_SIGN_UP_PATH = "/auth/v1/signup"
     const val SCENARIOS_PATH =
         "/rest/v1/scenarios?select=*&is_active=eq.true&order=created_at.asc"
+
+    fun profilePath(userId: String): String =
+        "/rest/v1/profiles?select=*&id=eq.$userId"
+
+    fun updateProfilePath(userId: String): String =
+        "/rest/v1/profiles?id=eq.$userId"
 }

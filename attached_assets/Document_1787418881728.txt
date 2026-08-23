@@ -389,6 +389,18 @@ DETAILS:
   - Kept the Supabase secret/service key out of Android code
   - Admin mutations remain server-side work pending a managed backend connection
 
+--- CHECKPOINT 27: Account And Mode Foundation Added ---
+DATE: 2026-08-23
+WHAT: Added the Android account/session layer and remote mode selection support
+WHY: Users need secure authentication, persistent sessions, and server-controlled scenario modes before the user experience can replace the local scenario manager
+WHERE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/data/remote
+DETAILS:
+  - Added email/password sign-up and sign-in support
+  - Added private preference storage for the client session
+  - Added remote profile loading with subscription and ad-free status
+  - Added active mode loading and selected-mode persistence
+  - Kept all server-side secret keys out of the Android client
+
 ================================================================================
 KEY CONTACT & REFERENCES
 ================================================================================
