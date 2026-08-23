@@ -42,6 +42,10 @@
     <string name="home_subscription_label">Access status</string>
     <string name="home_subscription_value">%1$s</string>
     <string name="home_ad_free">Ad-free access enabled</string>
+    <string name="home_free_access">100% free access — no payments required</string>
+    <string name="home_lifetime_access">Lifetime access</string>
+    <string name="home_access_expired">Access expired — watch reward ads or contact the administrator</string>
+    <string name="home_subscription_required">Start is unavailable until your free access is active.</string>
     <string name="home_start">Start clicker</string>
     <string name="home_stop">Stop clicker</string>
     <string name="home_switch_mode">Switch Mode</string>

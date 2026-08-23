@@ -446,3 +446,15 @@ Unity Ads: Android=6178983, iOS=6178982, Org=13469908655812
 ================================================================================
 END OF DOCUMENT
 ================================================================================
+
+--- CHECKPOINT 26: Subscription Access Gate Added ---
+DATE: 2026-08-23
+WHAT: Added subscription-aware start protection to the Autopilot home screen
+WHY: Users must not be able to start the clicker when free access is inactive or expired
+WHERE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/home/AutopilotHomeActivity.kt, app strings
+DETAILS:
+  - Start is disabled until the profile has loaded, a mode is selected, and access is active
+  - ISO-8601 subscription expiry timestamps are checked against the current time
+  - Lifetime access is recognized explicitly
+  - Expired access now shows a clear message directing users to reward ads or the administrator
+  - The home screen identifies Autopilot as 100% free with no payment requirement
