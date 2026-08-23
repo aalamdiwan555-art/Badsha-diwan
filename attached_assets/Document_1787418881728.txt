@@ -447,6 +447,18 @@ Unity Ads: Android=6178983, iOS=6178982, Org=13469908655812
 END OF DOCUMENT
 ================================================================================
 
+--- CHECKPOINT 44: Atomic Reward Claim Foundation Added ---
+DATE: 2026-08-23
+WHAT: Added the server-authorized reward-ad claim contract
+WHY: Reward progress and free-access grants must not be trusted to local Android state
+WHERE: Supabase schema, Android Supabase client and account repository
+DETAILS:
+  - Added an atomic claim_reward_ad RPC with row locking and UTC-day counter handling
+  - Enforced the 20-ad daily limit and one-day access grant at the twentieth completion
+  - Recorded reward completion in subscriptions and ad_events for auditability
+  - Rejected unauthenticated, banned, and ad-free accounts
+  - Added Android request and response models without exposing any server secret
+
 --- CHECKPOINT 26: Subscription Access Gate Added ---
 DATE: 2026-08-23
 WHAT: Added subscription-aware start protection to the Autopilot home screen

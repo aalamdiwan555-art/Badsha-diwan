@@ -21,6 +21,7 @@ object SupabaseConfig {
     const val ADMIN_GRANT_SUBSCRIPTION_RPC = "/rest/v1/rpc/admin_grant_subscription"
     const val ADMIN_SET_AD_FREE_RPC = "/rest/v1/rpc/admin_set_ad_free"
     const val ADMIN_SET_BANNED_RPC = "/rest/v1/rpc/admin_set_banned"
+    const val CLAIM_REWARD_AD_RPC = "/rest/v1/rpc/claim_reward_ad"
 
     fun profilePath(userId: String): String =
         "/rest/v1/profiles?select=*&id=eq.$userId"

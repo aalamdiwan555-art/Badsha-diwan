@@ -101,6 +101,12 @@ class AutopilotAccountRepository(
         client.setBanned(accessToken, userId, banned, reason?.trim())
     }
 
+    suspend fun claimRewardAd(): RewardAdClaim {
+        val accessToken = sessionStore.accessToken
+            ?: error("Cannot claim a reward without an authenticated session")
+        return client.claimRewardAd(accessToken)
+    }
+
     suspend fun loadUsers(): List<UserProfile> {
         val accessToken = sessionStore.accessToken
             ?: error("Cannot load users without an authenticated session")

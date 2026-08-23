@@ -267,6 +267,24 @@ class SupabaseRestClient(
         )
     }
 
+    suspend fun claimRewardAd(accessToken: String): RewardAdClaim =
+        withContext(Dispatchers.IO) {
+            val response = JSONObject(
+                request(
+                    method = "POST",
+                    path = SupabaseConfig.CLAIM_REWARD_AD_RPC,
+                    body = "{}",
+                    accessToken = accessToken,
+                ),
+            )
+            RewardAdClaim(
+                adsWatchedToday = response.optInt("ads_watched_today", 0),
+                unlocked = response.optBoolean("unlocked", false),
+                subscriptionExpiresAt = response.optString("subscription_expires_at")
+                    .takeIf { it.isNotBlank() && it != "null" },
+            )
+        }
+
     private fun request(
         method: String,
         path: String,
@@ -344,6 +362,12 @@ data class ScenarioMode(
     val description: String?,
     val version: Int,
     val scenarioData: JSONObject,
+)
+
+data class RewardAdClaim(
+    val adsWatchedToday: Int,
+    val unlocked: Boolean,
+    val subscriptionExpiresAt: String?,
 )
 
 private fun JSONObject.toUserProfile() = UserProfile(

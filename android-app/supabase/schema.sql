@@ -363,3 +363,98 @@ begin
   );
 end;
 $$;
+
+-- Reward completion is intentionally handled as one atomic server operation.
+-- The Android client should call this only after the ad provider reports a
+-- completed rewarded impression; it must never update profile counters locally.
+create or replace function public.claim_reward_ad()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_profile public.profiles%rowtype;
+  watched_today_value integer;
+  new_expiry timestamptz;
+  unlocked boolean := false;
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required';
+  end if;
+
+  select *
+  into current_profile
+  from public.profiles
+  where id = auth.uid()
+  for update;
+
+  if not found then
+    raise exception 'Profile not found';
+  end if;
+  if current_profile.is_banned then
+    raise exception 'This account has been disabled';
+  end if;
+  if current_profile.is_ad_free then
+    raise exception 'Reward ads are unavailable for ad-free accounts';
+  end if;
+
+  -- Counters are scoped to the UTC calendar day, matching the documented
+  -- reset schedule and avoiding device-clock manipulation.
+  if current_profile.last_ad_watched_at is null
+     or (current_profile.last_ad_watched_at at time zone 'UTC')::date
+        <> (now() at time zone 'UTC')::date then
+    watched_today_value := 0;
+  else
+    watched_today_value := greatest(current_profile.ads_watched_today, 0);
+  end if;
+
+  if watched_today_value >= 20 then
+    raise exception 'Daily reward limit reached';
+  end if;
+
+  watched_today_value := watched_today_value + 1;
+
+  if watched_today_value = 20 then
+    unlocked := true;
+    new_expiry := greatest(
+      coalesce(current_profile.subscription_expires_at, now()),
+      now()
+    ) + interval '1 day';
+
+    update public.profiles
+    set ads_watched_today = 0,
+        total_ads_watched = greatest(total_ads_watched, 0) + 1,
+        last_ad_watched_at = now(),
+        subscription_status = 'active',
+        subscription_expires_at = new_expiry,
+        updated_at = now()
+    where id = auth.uid();
+
+    insert into public.subscriptions (
+      user_id, plan_type, duration_days, expires_at, note
+    ) values (
+      auth.uid(), 'reward_ad', 1, new_expiry, 'Unlocked after 20 verified reward ads'
+    );
+  else
+    update public.profiles
+    set ads_watched_today = watched_today_value,
+        total_ads_watched = greatest(total_ads_watched, 0) + 1,
+        last_ad_watched_at = now(),
+        updated_at = now()
+    where id = auth.uid();
+  end if;
+
+  insert into public.ad_events (user_id, ad_type, event_type)
+  values (auth.uid(), 'rewarded', case when unlocked then 'completed_unlock' else 'completed' end);
+
+  return jsonb_build_object(
+    'ads_watched_today', case when unlocked then 0 else watched_today_value end,
+    'unlocked', unlocked,
+    'subscription_expires_at', new_expiry
+  );
+end;
+$$;
+
+revoke all on function public.claim_reward_ad() from public;
+grant execute on function public.claim_reward_ad() to authenticated;
