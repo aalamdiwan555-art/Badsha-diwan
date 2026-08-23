@@ -11,17 +11,25 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
 import com.autopilot.driver.data.remote.AutopilotSessionStore
+import com.autopilot.driver.data.remote.RemoteModeInstaller
 import com.autopilot.driver.data.remote.ScenarioMode
 import com.autopilot.driver.data.remote.SupabaseRestClient
 import com.buzbuz.smartautoclicker.R
 import com.autopilot.driver.home.AutopilotHomeActivity
+import com.buzbuz.smartautoclicker.core.dumb.domain.IDumbRepository
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.launch
 
 /**
  * First-login mode picker. The list is read-only; only the administrator can
  * create or edit the scenarios that appear here.
  */
+@AndroidEntryPoint
 class ModeSelectionActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var dumbRepository: IDumbRepository
 
     private lateinit var modeList: LinearLayout
     private lateinit var statusText: TextView
@@ -90,8 +98,15 @@ class ModeSelectionActivity : ComponentActivity() {
     private fun selectMode(button: Button, mode: ScenarioMode) {
         modeList.isEnabled = false
         button.isEnabled = false
+        statusText.visibility = View.VISIBLE
+        statusText.setText(R.string.mode_loading)
         lifecycleScope.launch {
-            runCatching { accountRepository.selectMode(mode) }
+            runCatching {
+                // Install first so a failed or malformed remote payload never
+                // becomes the user's selected server-side mode.
+                RemoteModeInstaller(dumbRepository).install(mode)
+                accountRepository.selectMode(mode)
+            }
                 .onSuccess {
                     selectedModeId = mode.id
                     Toast.makeText(
