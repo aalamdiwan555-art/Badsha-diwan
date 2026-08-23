@@ -33,6 +33,7 @@ class AdminDashboardActivity : ComponentActivity() {
     private lateinit var userList: LinearLayout
     private lateinit var modeNameInput: EditText
     private lateinit var modeDescriptionInput: EditText
+    private lateinit var modeScenarioJsonInput: EditText
     private lateinit var interstitialIntervalInput: EditText
     private lateinit var rewardAdsInput: EditText
     private lateinit var trialDaysInput: EditText
@@ -53,6 +54,7 @@ class AdminDashboardActivity : ComponentActivity() {
         userList = findViewById(R.id.admin_user_list)
         modeNameInput = findViewById(R.id.admin_mode_name)
         modeDescriptionInput = findViewById(R.id.admin_mode_description)
+        modeScenarioJsonInput = findViewById(R.id.admin_mode_scenario_json)
         interstitialIntervalInput = findViewById(R.id.admin_interstitial_interval)
         rewardAdsInput = findViewById(R.id.admin_reward_ads)
         trialDaysInput = findViewById(R.id.admin_trial_days)
@@ -75,9 +77,18 @@ class AdminDashboardActivity : ComponentActivity() {
             modeNameInput.requestFocus()
             return
         }
+        val scenarioData = runCatching {
+            org.json.JSONObject(modeScenarioJsonInput.text.toString())
+        }.getOrNull()
+        if (scenarioData == null || !ScenarioValidator.validate(scenarioData)) {
+            statusText.setText(R.string.admin_invalid_scenario)
+            modeScenarioJsonInput.requestFocus()
+            return
+        }
 
         modeNameInput.isEnabled = false
         modeDescriptionInput.isEnabled = false
+        modeScenarioJsonInput.isEnabled = false
         lifecycleScope.launch {
             runCatching {
                 val current = accountRepository.loadSavedAccount()
@@ -90,10 +101,12 @@ class AdminDashboardActivity : ComponentActivity() {
                 accountRepository.createScenario(
                     name = name,
                     description = modeDescriptionInput.text.toString().trim().takeIf { it.isNotBlank() },
+                    scenarioData = scenarioData,
                 )
             }.onSuccess {
                 modeNameInput.text.clear()
                 modeDescriptionInput.text.clear()
+                modeScenarioJsonInput.text.clear()
                 statusText.setText(R.string.admin_mode_created)
                 loadDashboard()
             }.onFailure {
@@ -101,6 +114,7 @@ class AdminDashboardActivity : ComponentActivity() {
             }
             modeNameInput.isEnabled = true
             modeDescriptionInput.isEnabled = true
+            modeScenarioJsonInput.isEnabled = true
         }
     }
 
