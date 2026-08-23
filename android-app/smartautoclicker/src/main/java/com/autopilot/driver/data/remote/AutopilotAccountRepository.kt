@@ -7,6 +7,7 @@ package com.autopilot.driver.data.remote
 class AutopilotAccountRepository(
     private val client: SupabaseRestClient,
     private val sessionStore: AutopilotSessionStore,
+    private val modeCache: AutopilotModeCache = AutopilotModeCache(sessionStore.context),
 ) {
     suspend fun signIn(email: String, password: String): AuthResult {
         val session = client.signIn(email.trim(), password)
@@ -50,6 +51,7 @@ class AutopilotAccountRepository(
         val userId = sessionStore.userId
             ?: error("Cannot select a mode without an authenticated user")
         client.selectScenario(accessToken, userId, mode)
+        modeCache.saveSelectedMode(mode)
     }
 
     suspend fun requestPasswordReset(email: String) {
@@ -112,13 +114,25 @@ class AutopilotAccountRepository(
         val userId = session.userId ?: error("Authenticated response did not include a user id")
         val profile = client.fetchProfile(accessToken, userId)
             ?: error("Authenticated user does not have a profiles row")
+        if (profile.isBanned) {
+            sessionStore.clear()
+            throw BannedAccountException(profile.banReason)
+        }
+        val availableModes = runCatching {
+            client.fetchActiveScenarios(accessToken).also(modeCache::saveModes)
+        }.getOrElse {
+            modeCache.loadModes()
+        }
         return AuthResult.Authenticated(
             session = session,
             profile = profile,
-            availableModes = client.fetchActiveScenarios(accessToken),
+            availableModes = availableModes,
         )
     }
 }
+
+class BannedAccountException(reason: String?) :
+    IllegalStateException(reason?.takeIf { it.isNotBlank() } ?: "This account has been disabled.")
 
 sealed interface AuthResult {
     data class Authenticated(
