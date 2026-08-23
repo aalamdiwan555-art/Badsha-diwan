@@ -47,6 +47,18 @@
             android:textColor="@android:color/white"
             android:textColorHint="#91A0B5" />
 
+        <EditText
+            android:id="@+id/admin_mode_scenario_json"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="top"
+            android:hint="@string/admin_scenario_json_create_hint"
+            android:inputType="textMultiLine"
+            android:minLines="6"
+            android:textColor="@android:color/white"
+            android:textColorHint="#91A0B5" />
+
         <Button
             android:id="@+id/admin_create_mode"
             android:layout_width="match_parent"
