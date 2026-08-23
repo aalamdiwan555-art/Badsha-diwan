@@ -151,12 +151,11 @@ class AutopilotAccountRepository(
         }.getOrElse {
             modeCache.loadModes()
         }
-        val selectedMode = availableModes.firstOrNull { it.id == profile.selectedScenarioId }
-            ?: availableModes.firstOrNull()
+        val selectedMode = profile.selectedScenarioId
+            ?.let { selectedId -> availableModes.firstOrNull { it.id == selectedId } }
         val normalizedProfile = if (
             selectedMode != null &&
-            (profile.selectedScenarioId != selectedMode.id ||
-                profile.selectedScenarioName != selectedMode.name)
+            profile.selectedScenarioName != selectedMode.name
         ) {
             client.selectScenario(accessToken, selectedMode)
             modeCache.saveSelectedMode(selectedMode)
