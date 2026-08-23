@@ -34,6 +34,10 @@ androidxSplashScreen = "1.2.0"
 androidxVectorDrawable = "1.2.0"
 
 # Other
+supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt", version.ref = "supabaseVersion" }
+supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt", version.ref = "supabaseVersion" }
+supabase-realtime = { group = "io.github.jan-tennert.supabase", name = "realtime-kt", version.ref = "supabaseVersion" }
+ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktorVersion" }
 airbnbLottie = "6.7.1"
 googleMaterial = "1.14.0"
 kotlinSerializationJson = "1.11.0"
@@ -52,6 +56,8 @@ googleGmsAds = "25.3.0"
 googlePlayReview = "2.0.2"
 googlePlayAssetDelivery = "2.3.0"
 unityAds = "4.12.0"
+supabaseVersion = "2.5.4"
+ktorVersion = "2.3.12"
 firebaseMessaging = "24.1.0"
 
 # Tests only

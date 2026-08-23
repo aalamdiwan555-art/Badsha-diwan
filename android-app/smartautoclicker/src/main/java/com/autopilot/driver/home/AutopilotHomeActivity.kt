@@ -9,6 +9,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.auth.ModeSelectionActivity
@@ -19,6 +20,7 @@ import com.autopilot.driver.data.remote.AuthResult
 import com.autopilot.driver.data.remote.RemoteModeInstaller
 import com.autopilot.driver.data.remote.ScenarioMode
 import com.autopilot.driver.data.remote.SupabaseRestClient
+import com.autopilot.driver.data.remote.SupabaseRealtimeClient
 import com.autopilot.driver.data.remote.UserProfile
 import com.buzbuz.smartautoclicker.R
 import com.buzbuz.smartautoclicker.core.common.accessibility.domain.LocalAccessibilityServiceConnection
@@ -53,11 +55,13 @@ class AutopilotHomeActivity : ComponentActivity() {
     private lateinit var rewardProgress: TextView
     private lateinit var bannerContainer: FrameLayout
     private val adsManager = AutopilotAdsManager()
+    private val realtimeClient by lazy { SupabaseRealtimeClient() }
     private var hasActiveAccess = false
     private var hasLoadedProfile = false
     private var selectedMode: ScenarioMode? = null
     private var rewardAdsForOneDay = 20
     private var profileRequestInFlight = false
+    private var realtimeSubscriptionsStarted = false
     private var activeClickSessionId: String? = null
     private val sessionCleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val refreshHandler = Handler(Looper.getMainLooper())
@@ -68,10 +72,12 @@ class AutopilotHomeActivity : ComponentActivity() {
         }
     }
 
+    private val autopilotSessionStore by lazy { AutopilotSessionStore(applicationContext) }
+
     private val accountRepository by lazy {
         AutopilotAccountRepository(
             client = SupabaseRestClient(),
-            sessionStore = AutopilotSessionStore(applicationContext),
+            sessionStore = autopilotSessionStore,
         )
     }
 
@@ -107,6 +113,32 @@ class AutopilotHomeActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         loadProfile()
+        if (!realtimeSubscriptionsStarted) {
+            realtimeSubscriptionsStarted = true
+            realtimeClient.subscribeToScenarios(
+                onScenarioChange = {
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@AutopilotHomeActivity,
+                            "New mode available! Pull down to refresh.",
+                            Toast.LENGTH_LONG,
+                        ).show()
+                        loadProfile(showLoading = false)
+                    }
+                },
+                scope = lifecycleScope,
+            )
+
+            autopilotSessionStore.userId?.let { userId ->
+                realtimeClient.subscribeToProfile(
+                    userId = userId,
+                    onProfileChange = {
+                        runOnUiThread { loadProfile(showLoading = false) }
+                    },
+                    scope = lifecycleScope,
+                )
+            }
+        }
         refreshHandler.removeCallbacks(refreshProfile)
         refreshHandler.postDelayed(refreshProfile, PROFILE_REFRESH_INTERVAL_MS)
     }

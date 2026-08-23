@@ -33,6 +33,7 @@
     <application
         android:name="${smartAutoClickerApplication}"
         android:allowBackup="false"
+        <!-- TODO: Replace the legacy icon resources with branded Autopilot artwork. -->
         android:icon="@mipmap/ic_smart_auto_clicker"
         android:label="${appName}"
         android:roundIcon="@mipmap/ic_smart_auto_clicker_round"
@@ -41,7 +42,7 @@
         tools:ignore="DataExtractionRules">
 
         <activity
-            android:name="${scenarioActivity}"
+            android:name="com.buzbuz.smartautoclicker.scenarios.ScenarioActivity"
             android:exported="false" />
 
         <activity
@@ -74,7 +75,7 @@
             android:exported="false" />
 
         <service
-            android:name="${smartAutoClickerService}"
+            android:name="com.buzbuz.smartautoclicker.SmartAutoClickerService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:foregroundServiceType="mediaProjection"
             android:exported="true">

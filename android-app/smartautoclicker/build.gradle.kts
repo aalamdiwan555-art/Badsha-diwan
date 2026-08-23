@@ -139,6 +139,10 @@ if (project.isBuildForVariant(KlickrFlavour.PLAY_STORE, KlickrBuildType.RELEASE)
 
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.realtime)
+    implementation(libs.ktor.client.android)
 
     implementation(libs.androidx.appCompat)
     implementation(libs.androidx.core.ktx)
