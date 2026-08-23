@@ -10,6 +10,7 @@ import com.unity3d.ads.UnityAdsShowOptions
 
 class RewardAdController : RewardAdPlayer {
     private var initialized = false
+    private var initializing = false
     private var loading = false
 
     override fun show(
@@ -28,12 +29,18 @@ class RewardAdController : RewardAdPlayer {
             showAd()
             return
         }
+        if (initializing) {
+            onError("Reward ads are still initializing. Please try again.")
+            return
+        }
+        initializing = true
         UnityAds.initialize(
             activity.applicationContext,
             GAME_ID,
             false,
             object : IUnityAdsInitializationListener {
                 override fun onInitializationComplete() {
+                    initializing = false
                     initialized = true
                     showAd()
                 }
@@ -42,6 +49,8 @@ class RewardAdController : RewardAdPlayer {
                     error: UnityAds.UnityAdsInitializationError?,
                     message: String?,
                 ) {
+                    initializing = false
+                    initialized = false
                     onError(message ?: "Reward ads could not be initialized.")
                 }
             },
