@@ -13,6 +13,8 @@ object ScenarioValidator {
     private const val MAX_JSON_BYTES = 256 * 1024
     private const val MAX_DEPTH = 12
     private const val MAX_NAME_LENGTH = 80
+    private const val MAX_SCREEN_COORDINATE = 20_000
+    private const val MAX_DURATION_MS = 3_600_000L
 
     fun validate(data: JSONObject): Boolean {
         if (data.toString().toByteArray(Charsets.UTF_8).size > MAX_JSON_BYTES) return false
@@ -24,9 +26,37 @@ object ScenarioValidator {
             val action = actions.opt(index) as? JSONObject ?: return false
             val type = action.optString("type").trim()
             if (type.isBlank() || type.length > 64) return false
+            if (!hasExecutableFields(action, type.lowercase())) return false
             if (!hasFiniteNumbers(action, 0)) return false
         }
         return true
+    }
+
+    private fun hasExecutableFields(action: JSONObject, type: String): Boolean =
+        when (type) {
+            "click", "tap" ->
+                hasCoordinate(action, "x") && hasCoordinate(action, "y")
+            "swipe" ->
+                hasCoordinate(action, "from_x") &&
+                    hasCoordinate(action, "from_y") &&
+                    hasCoordinate(action, "to_x") &&
+                    hasCoordinate(action, "to_y")
+            "pause", "delay" -> hasDuration(action, "duration_ms", 500L)
+            else -> false
+        }
+
+    private fun hasCoordinate(action: JSONObject, key: String): Boolean =
+        action.has(key) &&
+            action.optDouble(key, Double.NaN).isFinite() &&
+            action.optDouble(key) in 0.0..MAX_SCREEN_COORDINATE.toDouble()
+
+    private fun hasDuration(action: JSONObject, key: String, default: Long): Boolean {
+        val value = if (action.has(key)) {
+            action.optDouble(key, Double.NaN)
+        } else {
+            default.toDouble()
+        }
+        return value.isFinite() && value in 1.0..MAX_DURATION_MS.toDouble()
     }
 
     private fun hasFiniteNumbers(value: Any?, depth: Int): Boolean {
