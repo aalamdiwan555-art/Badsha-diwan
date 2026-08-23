@@ -74,12 +74,12 @@ class RemoteModeInstaller(
                             isRepeatInfinite = action.optBoolean("repeat_infinite", false),
                             repeatDelayMs = duration(action, "repeat_delay_ms", 0L),
                             fromPosition = Point(
-                                coordinate(action, "from_x"),
-                                coordinate(action, "from_y"),
+                                coordinate(action, "from_x", "fromX", "start_x", "startX"),
+                                coordinate(action, "from_y", "fromY", "start_y", "startY"),
                             ),
                             toPosition = Point(
-                                coordinate(action, "to_x"),
-                                coordinate(action, "to_y"),
+                                coordinate(action, "to_x", "toX", "end_x", "endX"),
+                                coordinate(action, "to_y", "toY", "end_y", "endY"),
                             ),
                             swipeDurationMs = duration(action, "duration_ms", 300L),
                         ),
@@ -98,11 +98,17 @@ class RemoteModeInstaller(
         }
     }
 
-    private fun coordinate(action: JSONObject, key: String): Int =
-        action.getDouble(key).toInt().coerceIn(0, MAX_SCREEN_COORDINATE)
+    private fun coordinate(action: JSONObject, vararg keys: String): Int {
+        val key = keys.firstOrNull(action::has)
+            ?: error("Missing coordinate: ${keys.first()}")
+        return action.getDouble(key).toInt().coerceIn(0, MAX_SCREEN_COORDINATE)
+    }
 
     private fun duration(action: JSONObject, key: String, default: Long): Long =
-        action.optDouble(key, default.toDouble()).toLong().coerceIn(1L, MAX_DURATION_MS)
+        action.optDouble(
+            key,
+            action.optDouble("duration", default.toDouble()),
+        ).toLong().coerceIn(1L, MAX_DURATION_MS)
 
     private fun repeatCount(action: JSONObject): Int =
         action.optInt("repeat_count", 1).coerceIn(1, 99_999)

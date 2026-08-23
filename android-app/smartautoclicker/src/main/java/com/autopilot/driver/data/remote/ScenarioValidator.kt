@@ -37,24 +37,25 @@ object ScenarioValidator {
             "click", "tap" ->
                 hasCoordinate(action, "x") && hasCoordinate(action, "y")
             "swipe" ->
-                hasCoordinate(action, "from_x") &&
-                    hasCoordinate(action, "from_y") &&
-                    hasCoordinate(action, "to_x") &&
-                    hasCoordinate(action, "to_y")
+                hasCoordinate(action, "from_x", "fromX", "start_x", "startX") &&
+                    hasCoordinate(action, "from_y", "fromY", "start_y", "startY") &&
+                    hasCoordinate(action, "to_x", "toX", "end_x", "endX") &&
+                    hasCoordinate(action, "to_y", "toY", "end_y", "endY")
             "pause", "delay" -> hasDuration(action, "duration_ms", 500L)
             else -> false
         }
 
-    private fun hasCoordinate(action: JSONObject, key: String): Boolean =
-        action.has(key) &&
-            action.optDouble(key, Double.NaN).isFinite() &&
-            action.optDouble(key) in 0.0..MAX_SCREEN_COORDINATE.toDouble()
+    private fun hasCoordinate(action: JSONObject, vararg keys: String): Boolean {
+        val key = keys.firstOrNull(action::has) ?: return false
+        val value = action.optDouble(key, Double.NaN)
+        return value.isFinite() && value in 0.0..MAX_SCREEN_COORDINATE.toDouble()
+    }
 
     private fun hasDuration(action: JSONObject, key: String, default: Long): Boolean {
-        val value = if (action.has(key)) {
-            action.optDouble(key, Double.NaN)
-        } else {
-            default.toDouble()
+        val value = when {
+            action.has(key) -> action.optDouble(key, Double.NaN)
+            action.has("duration") -> action.optDouble("duration", Double.NaN)
+            else -> default.toDouble()
         }
         return value.isFinite() && value in 1.0..MAX_DURATION_MS.toDouble()
     }
