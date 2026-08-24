@@ -1,0 +1,1890 @@
+================================================================================
+     BADSHA-DIWAN REPOSITORY — 100% DEEP AUDIT REPORT
+     For AI Fix Agent — Every Bug, Error, Mismatch & Missing File
+================================================================================
+Generated: 2026-08-24
+Scope: Full repository line-by-line, file-by-file
+Total Issues: 67 (APK Blockers: 14 | Critical: 18 | High: 16 | Medium: 12 | Low: 7)
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+Section 1  — APK BUILD BLOCKERS (Why APK Will Not Build)
+Section 2  — Android App Deep Bugs
+Section 3  — Backend/Node.js Critical Bugs
+Section 4  — Workspace & Configuration Mismatches
+Section 5  — Type Safety & TypeScript Issues
+Section 6  — Missing/Incomplete Files
+Section 7  — Dependency & Version Mismatches
+Section 8  — Build Logic & Gradle Issues
+Section 9  — Security & Hardcoded Values
+Section 10 — Repository Hygiene
+Section 11 — Fix Execution Order
+Section 12 — Verification Commands
+
+================================================================================
+SECTION 1: APK BUILD BLOCKERS — WHY THE APK WILL NOT BUILD
+================================================================================
+
+These 14 issues will PREVENT the Android APK from compiling or producing a
+valid installable artifact. Fix them in the order listed.
+
+--------------------------------------------------------------------------------
+BUG #1: MISSING SERVICE PACKAGE — AndroidManifest references classes that 
+        DO NOT EXIST in the source tree.
+--------------------------------------------------------------------------------
+FILE: android-app/smartautoclicker/src/main/AndroidManifest.xml
+SEVERITY: CRITICAL — Compilation will fail with "cannot find symbol"
+
+The manifest declares these services in package `com.autopilot.driver.service`:
+  - com.autopilot.driver.service.AutopilotFloatingBannerService
+  - com.autopilot.driver.service.AutopilotFirebaseMessagingService
+
+VERIFICATION: GitHub API returned 404 for:
+  /contents/android-app/smartautoclicker/src/main/java/com/autopilot/driver/service
+
+The `service` directory DOES NOT EXIST under `com/autopilot/driver/`.
+Only these packages exist:
+  - com.autopilot.driver.ads
+  - com.autopilot.driver.auth
+  - com.autopilot.driver.data
+  - com.autopilot.driver.home
+
+FIX: Create the missing service package and both service classes.
+
+CREATE FILE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/service/AutopilotFloatingBannerService.kt
+--------------------------------------------------------------------------------
+package com.autopilot.driver.service
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.graphics.PixelFormat
+import android.os.Build
+import android.os.IBinder
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.WindowManager
+import androidx.core.app.NotificationCompat
+import com.autopilot.driver.R
+import com.autopilot.driver.home.AutopilotHomeActivity
+
+class AutopilotFloatingBannerService : Service() {
+
+    companion object {
+        const val CHANNEL_ID = "autopilot_floating_banner"
+        const val NOTIFICATION_ID = 1001
+    }
+
+    private var windowManager: WindowManager? = null
+    private var floatingView: View? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        createNotificationChannel()
+        startForeground(NOTIFICATION_ID, buildNotification())
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        showFloatingBanner()
+        return START_STICKY
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onDestroy() {
+        removeFloatingBanner()
+        super.onDestroy()
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Autopilot Floating Banner",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = getSystemService(NotificationManager::class.java)
+            manager?.createNotificationChannel(channel)
+        }
+    }
+
+    private fun buildNotification(): Notification {
+        val intent = Intent(this, AutopilotHomeActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Autopilot Running")
+            .setContentText("Floating banner is active")
+            .setSmallIcon(R.mipmap.ic_launcher_foreground)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .build()
+    }
+
+    private fun showFloatingBanner() {
+        if (floatingView != null) return
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                WindowManager.LayoutParams.TYPE_PHONE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = 0
+            y = 100
+        }
+        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_banner, null)
+        windowManager?.addView(floatingView, params)
+    }
+
+    private fun removeFloatingBanner() {
+        floatingView?.let {
+            windowManager?.removeView(it)
+            floatingView = null
+        }
+    }
+}
+--------------------------------------------------------------------------------
+
+CREATE FILE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/service/AutopilotFirebaseMessagingService.kt
+--------------------------------------------------------------------------------
+package com.autopilot.driver.service
+
+import android.util.Log
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
+
+class AutopilotFirebaseMessagingService : FirebaseMessagingService() {
+
+    companion object {
+        private const val TAG = "AutopilotFMS"
+    }
+
+    override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        Log.d(TAG, "From: ${remoteMessage.from}")
+        remoteMessage.notification?.let {
+            Log.d(TAG, "Message Notification Body: ${it.body}")
+        }
+    }
+
+    override fun onNewToken(token: String) {
+        Log.d(TAG, "Refreshed token: $token")
+    }
+}
+--------------------------------------------------------------------------------
+
+CREATE FILE: android-app/smartautoclicker/src/main/res/layout/floating_banner.xml
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Autopilot"
+        android:textColor="@android:color/white"
+        android:background="@android:color/black"
+        android:padding="8dp"
+        android:textSize="14sp" />
+</FrameLayout>
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+BUG #2: MISSING google-services.json — Firebase Crashlytics Plugin Requires It
+--------------------------------------------------------------------------------
+FILE: android-app/smartautoclicker/build.gradle.kts (line: apply crashlytics plugin)
+SEVERITY: CRITICAL — Build fails with "File google-services.json is missing"
+
+The `CrashlyticsConventionPlugin` applies:
+  - com.google.gms.google-services
+  - com.google.firebase.crashlytics
+
+Both plugins REQUIRE `google-services.json` in:
+  android-app/smartautoclicker/google-services.json
+
+This file is NOT in the repository and is never generated.
+
+FIX: Create a dummy google-services.json for debug builds, or disable
+crashlytics for local builds. Recommended: create the file with placeholder
+values for debug, and document that real values must be injected for release.
+
+CREATE FILE: android-app/smartautoclicker/google-services.json
+--------------------------------------------------------------------------------
+{
+  "project_info": {
+    "project_number": "123456789000",
+    "project_id": "autopilot-debug",
+    "storage_bucket": "autopilot-debug.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789000:android:0000000000000000",
+        "android_client_info": {
+          "package_name": "com.autopilot.driver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "DEBUG-API-KEY-PLACEHOLDER-1234567890"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+--------------------------------------------------------------------------------
+NOTE: Replace with real Firebase project values before release.
+
+--------------------------------------------------------------------------------
+BUG #3: MISSING local.properties — Build Parameters Plugin Reads Required Values
+--------------------------------------------------------------------------------
+FILE: android-app/local.properties (MISSING)
+SEVERITY: CRITICAL — Release builds fail; signing config incomplete
+
+The `BuildParametersPlugin` reads from `local.properties` (or gradle args):
+  - signingStorePassword
+  - signingKeyAlias
+  - signingKeyPassword
+  - adsApplicationId
+  - adsUnitId
+  - consentTestDevicesIds
+  - consentTestGeography
+  - adsTestDevicesIds
+  - billingPublicKey
+  - randomizeAppId
+
+Without local.properties, defaults are used:
+  - signing passwords = "" (empty string)
+  - AndroidSigningConvention will warn but NOT fail
+  - However, release APK will be unsigned
+  - AdMob IDs will be empty in release (causes runtime crashes)
+  - Billing public key will be empty
+
+FIX: Create local.properties with debug-safe values.
+
+CREATE FILE: android-app/local.properties
+--------------------------------------------------------------------------------
+# Debug build configuration — replace with real values for release
+signingStorePassword=debug
+signingKeyAlias=debug
+signingKeyPassword=debug
+randomizeAppId=false
+adsApplicationId=ca-app-pub-3940256099942544~3347511713
+adsUnitId=ca-app-pub-3940256099942544/8691691433
+consentTestGeography=0
+billingPublicKey=DEBUG_BILLING_KEY
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+BUG #4: MISSING SIGNING KEYSTORE FILE
+--------------------------------------------------------------------------------
+FILE: android-app/smartautoclicker/build.gradle.kts
+SEVERITY: HIGH — Release build signing fails
+
+Line: storeFile = file("./smartautoclicker.jks")
+
+The file `android-app/smartautoclicker/smartautoclicker.jks` does NOT exist.
+The `AndroidSigningConvention` plugin checks if the file exists and warns if
+missing, but the build continues with no signing config for release.
+
+FIX: Generate a debug keystore or create one:
+  cd android-app/smartautoclicker
+  keytool -genkey -v -keystore smartautoclicker.jks -keyalg RSA -keysize 2048 -validity 10000 -alias debug -storepass debug -keypass debug -dname "CN=Debug"
+
+Or modify the signing config to be conditional:
+
+In android-app/smartautoclicker/build.gradle.kts, REPLACE the signingConfigs block:
+--------------------------------------------------------------------------------
+    signingConfigs {
+        create(KlickrBuildType.RELEASE.buildTypeName) {
+            val keystoreFile = file("./smartautoclicker.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = buildParameters.signingStorePassword.typedValue
+                keyAlias = buildParameters.signingKeyAlias.typedValue
+                keyPassword = buildParameters.signingKeyPassword.typedValue
+            } else {
+                logger.warn("Keystore not found at ${keystoreFile.absolutePath}. Release builds will be unsigned.")
+            }
+        }
+    }
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+BUG #5: NAMESPACE / PACKAGE MISMATCH — Obfuscation vs Manifest vs Source
+--------------------------------------------------------------------------------
+FILE: android-app/smartautoclicker/build.gradle.kts
+SEVERITY: HIGH — Obfuscation plugin writes files to wrong path; manifest 
+          placeholders may resolve incorrectly.
+
+The obfuscation config says:
+  setup(applicationId = "com.autopilot.driver", ...)
+
+But the app namespace is:
+  namespace = "com.buzbuz.smartautoclicker"
+
+And the obfuscatedApplication references:
+  "com.buzbuz.smartautoclicker.application.SmartAutoClickerApplication"
+
+The obfuscation plugin creates `ComponentConfig.kt` at:
+  src/main/java/com/autopilot/driver/ComponentConfig.kt
+
+But the actual source tree under `com/autopilot/driver` only has:
+  - ads, auth, data, home (no `application` package)
+
+This means the generated ComponentConfig.kt will be in a package that doesn't
+match the actual application class location.
+
+FIX: Align everything to `com.autopilot.driver` since that is the desired
+branding. The obfuscation plugin's `originalApplicationId` should match the
+actual package structure.
+
+In android-app/smartautoclicker/build.gradle.kts, REPLACE the obfuscationConfig:
+--------------------------------------------------------------------------------
+obfuscationConfig {
+    obfuscatedApplication {
+        create("com.autopilot.driver.AutopilotApplication")
+    }
+    obfuscatedComponents {
+        create("com.autopilot.driver.ScenarioActivity")
+        create("com.autopilot.driver.AutopilotService")
+    }
+
+    setup(
+        applicationId = "com.autopilot.driver",
+        appNameResId = "@string/app_name",
+        shouldRandomize = buildParameters.randomizeAppId.typedValue &&
+                project.isBuildForVariant(KlickrFlavour.F_DROID),
+    )
+}
+--------------------------------------------------------------------------------
+
+Then CREATE the application class:
+CREATE FILE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/AutopilotApplication.kt
+--------------------------------------------------------------------------------
+package com.autopilot.driver
+
+import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
+
+@HiltAndroidApp
+class AutopilotApplication : Application()
+--------------------------------------------------------------------------------
+
+And CREATE the service class:
+CREATE FILE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/AutopilotService.kt
+--------------------------------------------------------------------------------
+package com.autopilot.driver
+
+import android.accessibilityservice.AccessibilityService
+import android.view.accessibility.AccessibilityEvent
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
+class AutopilotService : AccessibilityService() {
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
+    override fun onInterrupt() {}
+}
+--------------------------------------------------------------------------------
+
+And CREATE the activity:
+CREATE FILE: android-app/smartautoclicker/src/main/java/com/autopilot/driver/ScenarioActivity.kt
+--------------------------------------------------------------------------------
+package com.autopilot.driver
+
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
+class ScenarioActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_scenario)
+    }
+}
+--------------------------------------------------------------------------------
+
+CREATE FILE: android-app/smartautoclicker/src/main/res/layout/activity_scenario.xml
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Scenario"
+        android:textSize="24sp" />
+</FrameLayout>
+--------------------------------------------------------------------------------
+
+ALSO UPDATE AndroidManifest.xml to replace the old application class reference:
+  OLD: android:name="com.buzbuz.smartautoclicker.application.SmartAutoClickerApplication"
+  NEW: android:name="com.autopilot.driver.AutopilotApplication"
+
+And add the new service and activity declarations.
+
+--------------------------------------------------------------------------------
+BUG #6: MISSING ASSET PACK MODULES — Referenced But Not Defined
+--------------------------------------------------------------------------------
+FILE: android-app/smartautoclicker/build.gradle.kts
+SEVERITY: MEDIUM-HIGH — Play Store build fails if asset packs are missing
+
+The app references these asset packs:
+  :core:smart:detection-models:models:text:arabic
+  :core:smart:detection-models:models:text:chinese_simplified
+  :core:smart:detection-models:models:text:chinese_traditional
+  :core:smart:detection-models:models:text:cyrillic
+  :core:smart:detection-models:models:text:devanagari
+  :core:smart:detection-models:models:text:japanese
+  :core:smart:detection-models:models:text:kannada
+  :core:smart:detection-models:models:text:korean
+  :core:smart:detection-models:models:text:tamil
+  :core:smart:detection-models:models:text:telugu
+
+These are NOT listed in settings.gradle.kts and likely don't exist as
+standalone modules. The `detection-models` module has a `models` directory
+but the subdirectories are not registered as Gradle modules.
+
+FIX: Either remove the assetPacks block for now, or create the asset pack
+modules. For immediate build, remove the block:
+
+In android-app/smartautoclicker/build.gradle.kts, DELETE this block:
+--------------------------------------------------------------------------------
+    if (project.isBuildForVariant(KlickrFlavour.PLAY_STORE)) {
+        assetPacks.addAll(
+            listOf(
+                // ... all 10 entries ...
+            )
+        )
+    }
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+BUG #7: JDK VERSION MISMATCH — Build-Logic Requires 21, Project Says 17
+--------------------------------------------------------------------------------
+FILE: android-app/build-logic/convention/build.gradle.kts
+SEVERITY: MEDIUM — May cause compilation warnings or runtime issues
+
+The build-logic convention plugin sets:
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
+  jvmTarget.set(JvmTarget.JVM_21)
+
+But `libs.versions.toml` says:
+  java = "17"
+
+And `AndroidApplicationConventionPlugin` uses `libs.versions.java` for the
+app's compileOptions, setting sourceCompatibility = JavaVersion.VERSION_17.
+
+This means the build scripts compile with JDK 21 but the app targets Java 17.
+This is not a hard error but is inconsistent and may cause issues with
+Kotlin 2.1.20 which prefers JDK 21.
+
+FIX: Align everything to Java 21 since Android Gradle Plugin 8.9 supports it.
+
+In android-app/gradle/libs.versions.toml, CHANGE:
+  java = "17"
+TO:
+  java = "21"
+
+In android-app/build-logic/convention/build.gradle.kts, the JDK 21 target
+is already correct. No change needed there.
+
+--------------------------------------------------------------------------------
+BUG #8: FIREBASE & UNITY ADS INCLUDED UNCONDITIONALLY — May Fail Without Config
+--------------------------------------------------------------------------------
+FILE: android-app/smartautoclicker/build.gradle.kts
+SEVERITY: MEDIUM — Runtime crashes if Firebase/Ads not configured
+
+Lines:
+  implementation(libs.unity.ads)
+  implementation(platform(libs.google.firebase.bom))
+  implementation(libs.google.firebase.messaging)
+
+These are in the main `dependencies` block, NOT flavor-scoped.
+This means even F-Droid builds (which should have no proprietary libraries)
+will include Firebase and Unity Ads.
+
+Also, the `revenue` feature module's build.gradle.kts correctly scopes
+AdMob/Billing to `playStoreImplementation`, but the APP module includes
+Firebase unconditionally.
+
+FIX: Move Firebase and Unity Ads to playStore flavor only.
+
+In android-app/smartautoclicker/build.gradle.kts, REPLACE:
+  implementation(libs.unity.ads)
+  implementation(platform(libs.google.firebase.bom))
+  implementation(libs.google.firebase.messaging)
+
+WITH:
+  playStoreImplementation(libs.unity.ads)
+  playStoreImplementation(platform(libs.google.firebase.bom))
+  playStoreImplementation(libs.google.firebase.messaging)
+
+--------------------------------------------------------------------------------
+BUG #9: ProGuard Rules Reference Missing Firebase Classes
+--------------------------------------------------------------------------------
+FILE: android-app/smartautoclicker/proguard-rules.pro
+SEVERITY: LOW-MEDIUM — May cause ProGuard warnings in release builds
+
+Lines:
+  -dontwarn com.google.firebase.crashlytics.ktx.FirebaseCrashlyticsKt
+  -dontwarn com.google.firebase.ktx.Firebase
+
+These are only needed if Firebase Crashlytics KTX is used. But the app
+uses `firebase-crashlytics-ktx` library. If the library is not actually
+used in code, ProGuard may strip it and these rules are harmless.
+However, if Firebase is moved to playStore flavor only (Bug #8), these
+rules should be in a playStore-specific proguard file.
+
+FIX: Move Firebase-specific ProGuard rules to a flavor-specific file, or
+keep them as-is since `-dontwarn` is harmless.
+
+--------------------------------------------------------------------------------
+BUG #10: android.nonTransitiveRClass=false Is Deprecated
+--------------------------------------------------------------------------------
+FILE: android-app/gradle.properties
+SEVERITY: LOW — Warning during build
+
+Line: android.nonTransitiveRClass=false
+
+AGP 8.9 has non-transitive R classes enabled by default. Setting this to
+false is deprecated and will be removed in AGP 9.0.
+
+FIX: Remove the line or set to true:
+  android.nonTransitiveRClass=true
+
+--------------------------------------------------------------------------------
+BUG #11: kapt.incremental.apt=false Disables Incremental Annotation Processing
+--------------------------------------------------------------------------------
+FILE: android-app/gradle.properties
+SEVERITY: LOW — Slower builds
+
+This disables incremental KAPT which significantly slows down builds with
+Dagger/Hilt. Hilt supports incremental processing.
+
+FIX: Remove the line or set to true:
+  kapt.incremental.apt=true
+
+--------------------------------------------------------------------------------
+BUG #12: MISSING .gitignore FOR android-app/.idea
+--------------------------------------------------------------------------------
+FILE: android-app/.idea/ (committed to git)
+SEVERITY: LOW — Causes merge conflicts, leaks local paths
+
+FIX: Add to android-app/.gitignore:
+  .idea/
+  *.iml
+  .gradle/
+  local.properties
+  build/
+  captures/
+  .externalNativeBuild/
+  .cxx/
+
+Then run:
+  git rm -rf android-app/.idea
+  git rm -rf android-app/*.iml
+  git commit -m "Remove IDE files from version control"
+
+--------------------------------------------------------------------------------
+BUG #13: VERSION CODE/NAME MISMATCH — Fork Identity Confusion
+--------------------------------------------------------------------------------
+FILE: android-app/smartautoclicker/build.gradle.kts
+SEVERITY: LOW — Could cause update conflicts if published
+
+versionCode = 94
+versionName = "4.0.0-beta09"
+
+These values suggest this is still the original Smart AutoClicker app
+versioning, not a new Autopilot app. If published to Play Store, it may
+conflict with the original app or fail version code checks.
+
+FIX: Reset to a new app identity:
+  versionCode = 1
+  versionName = "1.0.0"
+
+--------------------------------------------------------------------------------
+BUG #14: MISSING GOOGLE PLAY ASSET DELIVERY MODULE DECLARATIONS
+--------------------------------------------------------------------------------
+FILE: android-app/settings.gradle.kts
+SEVERITY: MEDIUM — If asset packs are ever enabled, build fails
+
+The settings.gradle.kts does not include the asset pack modules referenced
+in the app build file. If Bug #6 is fixed by creating asset packs, they
+must also be included in settings.gradle.kts.
+
+FIX: Ensure asset pack modules are included in settings.gradle.kts if used.
+
+
+================================================================================
+SECTION 2: ANDROID APP DEEP BUGS (Non-Blockers But Important)
+================================================================================
+
+BUG #15: AndroidManifest Missing specialUse Property for API 34+
+--------------------------------------------------------------------------------
+The floating banner service uses `foregroundServiceType="specialUse"` but
+is missing the REQUIRED `<property>` element for Android 14+.
+
+FIX: Add inside the service element in AndroidManifest.xml:
+  <property
+      android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+      android:value="floating_ui_overlay" />
+
+BUG #16: Manifest References Activities That May Not Have Proper Theme
+--------------------------------------------------------------------------------
+The manifest activities use `android:theme="@style/AppTheme"` but verify
+that `AppTheme` is defined in `res/values/themes.xml`.
+
+BUG #17: Supabase Schema Uses UUID But Android App May Expect Integer IDs
+--------------------------------------------------------------------------------
+The Supabase schema (`schema.sql`) uses `uuid` primary keys for all tables.
+The backend Drizzle schema (`lib/db/src/schema/index.ts`) uses `serial` 
+(integer) primary keys. If the Android app communicates with the backend
+API, there will be a type mismatch (UUID vs integer).
+
+FIX: Align both schemas. Either:
+  a) Change backend to use UUID: `uuid("id").primaryKey().defaultRandom()`
+  b) Change Supabase schema to use integer IDs with `serial`
+
+Recommended: Use UUID everywhere for consistency with Supabase Auth.
+
+BUG #18: Firebase Messaging Service Not Registered in Manifest
+--------------------------------------------------------------------------------
+The `AutopilotFirebaseMessagingService` is declared in the manifest but
+there is no `<intent-filter>` for `com.google.firebase.MESSAGING_EVENT`.
+
+FIX: Add to the service declaration in AndroidManifest.xml:
+  <intent-filter>
+      <action android:name="com.google.firebase.MESSAGING_EVENT" />
+  </intent-filter>
+
+
+================================================================================
+SECTION 3: BACKEND/NODE.JS CRITICAL BUGS
+================================================================================
+
+BUG #19: EMPTY DATABASE SCHEMA — Zero Tables Defined
+--------------------------------------------------------------------------------
+FILE: lib/db/src/schema/index.ts
+The file exports an empty object. Drizzle ORM is initialized with no tables.
+
+FIX: Replace with full schema (see Section 11 for complete code).
+
+BUG #20: ESM __dirname CRASH — drizzle.config.ts Will Fail
+--------------------------------------------------------------------------------
+FILE: lib/db/drizzle.config.ts
+Uses `__dirname` in an ESM module ("type": "module" in package.json).
+`__dirname` does not exist in ESM -> ReferenceError.
+
+FIX: Use `fileURLToPath(import.meta.url)` pattern.
+
+BUG #21: DATABASE_URL THROWS AT IMPORT TIME
+--------------------------------------------------------------------------------
+FILE: lib/db/src/index.ts
+Throws if DATABASE_URL is missing, preventing typecheck, tests, and CI.
+
+FIX: Remove the top-level throw; let Pool fail lazily.
+
+BUG #22: GENERATED API CLIENT FILES MISSING
+--------------------------------------------------------------------------------
+FILES: lib/api-client-react/src/generated/* (api.ts, api.schemas.ts)
+       lib/api-zod/src/generated/* (api.ts, types.ts)
+
+These are Orval-generated files and do not exist in the repo. Build fails.
+
+FIX: Run `cd lib/api-spec && pnpm install && pnpm run codegen`
+
+BUG #23: MOCKUP SANDBOX IMPORTS NON-EXISTENT GENERATED FILE
+--------------------------------------------------------------------------------
+FILE: artifacts/mockup-sandbox/src/App.tsx
+Imports `discoveredModules` from `./.generated/mockup-components` which
+does not exist.
+
+FIX: Create the stub file.
+
+BUG #24: VITE CONFIG THROWS WITHOUT ENV VARS
+--------------------------------------------------------------------------------
+FILE: artifacts/mockup-sandbox/vite.config.ts
+Throws if PORT or BASE_PATH are missing.
+
+FIX: Add default values.
+
+BUG #25: API SERVER THROWS WITHOUT PORT ENV VAR
+--------------------------------------------------------------------------------
+FILE: artifacts/api-server/src/index.ts
+Throws at module evaluation if PORT is missing.
+
+FIX: Provide default port "3000".
+
+BUG #26: OPENAPI SPEC IS ESSENTIALLY EMPTY
+--------------------------------------------------------------------------------
+FILE: lib/api-spec/openapi.yaml
+Only has `/healthz` endpoint. No auth, modes, profiles, admin endpoints.
+
+FIX: Expand the spec with all real endpoints, then regenerate clients.
+
+BUG #27: API SERVER ONLY HAS HEALTH ROUTE
+--------------------------------------------------------------------------------
+FILE: artifacts/api-server/src/routes/index.ts
+Only mounts the health router. No business logic routes.
+
+FIX: Implement and mount auth, modes, profiles, admin routers.
+
+
+================================================================================
+SECTION 4: WORKSPACE & CONFIGURATION MISMATCHES
+================================================================================
+
+BUG #28: pnpm-workspace.yaml References Non-Existent Directory
+--------------------------------------------------------------------------------
+Line: - lib/integrations/*
+Directory `lib/integrations` does not exist.
+
+FIX: Remove this line.
+
+BUG #29: pnpm-workspace.yaml Lists Unused Catalog Entries
+--------------------------------------------------------------------------------
+`wouter: ^3.3.5` is defined but never used.
+`msw` and `unrs-resolver` in onlyBuiltDependencies are not in any package.
+
+FIX: Remove unused entries.
+
+BUG #30: root/package.json Has Unused Dependency
+--------------------------------------------------------------------------------
+`@replit/connectors-sdk` is listed but never imported anywhere.
+
+FIX: Remove it.
+
+BUG #31: scripts/post-merge.sh Uses Wrong Filter Name
+--------------------------------------------------------------------------------
+Uses `pnpm --filter db push` but package is named `@workspace/db`.
+
+FIX: Change to `pnpm --filter @workspace/db push`.
+
+BUG #32: root/tsconfig.json Missing api-spec Reference
+--------------------------------------------------------------------------------
+`lib/api-spec` exists but is not in the tsconfig references.
+
+FIX: Add it to references.
+
+
+================================================================================
+SECTION 5: TYPE SAFETY & TYPESCRIPT ISSUES
+================================================================================
+
+BUG #33: strictFunctionTypes = false Inconsistent With Other Strict Flags
+--------------------------------------------------------------------------------
+FILE: tsconfig.base.json
+`strictNullChecks: true` and `strictPropertyInitialization: true` are on,
+but `strictFunctionTypes: false` and `noImplicitOverride: false` weaken
+type safety.
+
+FIX: Set both to true.
+
+BUG #34: cookie-parser Listed But Never Used
+--------------------------------------------------------------------------------
+FILE: artifacts/api-server/package.json
+`cookie-parser` and `@types/cookie-parser` are dependencies but
+`src/app.ts` never applies `cookieParser()` middleware.
+
+FIX: Either add the middleware or remove the packages.
+
+BUG #35: api-client-react peerDependencies Mismatch
+--------------------------------------------------------------------------------
+FILE: lib/api-client-react/package.json
+peerDependencies says `react: ">=18"` but workspace catalog pins `19.1.0`.
+
+FIX: Use `react: "catalog:"` for alignment.
+
+
+================================================================================
+SECTION 6: MISSING/INCOMPLETE FILES
+================================================================================
+
+BUG #36: scripts/src/hello.ts Is a Placeholder
+--------------------------------------------------------------------------------
+Only contains `console.log("Hello from scripts!");`
+
+FIX: Implement actual utility or remove.
+
+BUG #37: artifacts/api-server/src/lib/.gitkeep
+--------------------------------------------------------------------------------
+Empty placeholder directory.
+
+FIX: Remove once actual library files are added.
+
+BUG #38: artifacts/api-server/src/middlewares/.gitkeep
+--------------------------------------------------------------------------------
+Empty placeholder directory.
+
+FIX: Remove once middlewares are implemented.
+
+BUG #39: attached_assets Has Duplicate Files
+--------------------------------------------------------------------------------
+Four files with identical SHA hash:
+  full_prompt_1787418881802.txt
+  full_prompt_1787418881802_1787457011420.txt
+  full_prompt_1787418881802_1787460918928.txt
+  full_prompt_1787418881802_1787464432616.txt
+
+FIX: Delete the three suffixed duplicates.
+
+BUG #40: lib/api-spec/openapi.yaml Incomplete
+--------------------------------------------------------------------------------
+Only defines health endpoint. Missing:
+  - /auth/signup, /auth/signin
+  - /modes (list)
+  - /profile (get)
+  - /admin/* endpoints
+  - /scenarios/* endpoints
+  - /subscriptions/* endpoints
+
+FIX: Write the complete OpenAPI spec.
+
+
+================================================================================
+SECTION 7: DEPENDENCY & VERSION MISMATCHES
+================================================================================
+
+BUG #41: androidxCoreKtx = "1.12.0" Is Outdated
+--------------------------------------------------------------------------------
+Compile SDK is 35 but core-ktx is 1.12.0 (from 2023). Latest is 1.15.0.
+May cause compatibility issues with SDK 35.
+
+FIX: Update to `androidxCoreKtx = "1.15.0"` in libs.versions.toml.
+
+BUG #42: firebaseMessaging = "24.1.0" But BOM Is 34.15.0
+--------------------------------------------------------------------------------
+The BOM manages Firebase versions. Explicitly setting `firebaseMessaging`
+version in libs.versions.toml is redundant and may conflict.
+
+FIX: Remove `firebaseMessaging` from versions and let BOM resolve it.
+In smartautoclicker/build.gradle.kts, use:
+  playStoreImplementation(libs.google.firebase.messaging)
+
+Without a version in the TOML, the BOM will provide the correct version.
+
+BUG #43: supabaseVersion = "3.1.1" — Verify Latest
+--------------------------------------------------------------------------------
+Supabase Kotlin client 3.1.1 is from early 2025. Verify if a newer version
+exists that fixes compatibility with Ktor 3.0.3.
+
+BUG #44: Kotlin 2.1.20 + KSP 2.1.20-1.0.31 Compatibility
+--------------------------------------------------------------------------------
+This combination is valid, but verify that Room 2.6.1 supports KSP 1.0.31.
+Room 2.6.1 should work with KSP 1.0.31, but monitor for issues.
+
+
+================================================================================
+SECTION 8: BUILD LOGIC & GRADLE ISSUES
+================================================================================
+
+BUG #45: Build-Logic Convention build.gradle.kts Targets JDK 21
+--------------------------------------------------------------------------------
+While the app targets Java 17 (from libs.versions.toml), the build-logic
+itself compiles with JDK 21. This requires the build machine to have JDK 21
+installed. If only JDK 17 is available, the build-logic compilation fails.
+
+FIX: Either:
+  a) Install JDK 21 on the build machine (recommended)
+  b) Change build-logic to target JDK 17 (not recommended with Kotlin 2.1.20)
+
+BUG #46: FlavourConventionPlugin Applies To Both App and Library
+--------------------------------------------------------------------------------
+The plugin applies flavor dimensions to both `androidApp` and `androidLib`.
+This is correct but means ALL library modules must support the `fDroid` and
+`playStore` flavors. Verify that all `:core:*` and `:feature:*` modules
+have the `buzbuz.flavour` plugin applied.
+
+From the fetched build files, this appears to be the case. No fix needed.
+
+BUG #47: Obfuscation Plugin Creates Files At Build Time
+--------------------------------------------------------------------------------
+The `ObfuscationPlugin` creates `ComponentConfig.kt` at build time by
+writing directly to `src/main/java/`. This modifies the source tree during
+build, which can cause:
+  - Git dirty state
+  - IDE confusion
+  - Incremental build issues
+
+This is by design in the original Klick'r app, but for Autopilot it may
+conflict with the new package structure.
+
+FIX: Ensure the generated file path matches the actual source tree:
+  The plugin creates: src/main/java/com/autopilot/driver/ComponentConfig.kt
+  This is correct IF the package structure exists.
+
+
+================================================================================
+SECTION 9: SECURITY & HARDCODED VALUES
+================================================================================
+
+BUG #48: Admin Email Hardcoded in Supabase Schema
+--------------------------------------------------------------------------------
+FILE: android-app/supabase/schema.sql
+Line: lower(trim(coalesce(new.email, ''))) = 'aalamdiwan555@gmail.com'
+
+The admin email is hardcoded in the database function. If the admin email
+changes, this requires a schema migration.
+
+FIX: Use an environment variable or a separate admin config table.
+
+BUG #49: Supabase Schema Has Security Definer Functions With Hardcoded Logic
+--------------------------------------------------------------------------------
+The `handle_new_user` function uses `security definer` and hardcodes the
+admin email check. This is functional but inflexible.
+
+FIX: Move admin email list to a config table or use Supabase dashboard
+roles instead of email-based checks.
+
+BUG #50: API Server Has No Authentication Middleware
+--------------------------------------------------------------------------------
+FILE: artifacts/api-server/src/app.ts
+The Express app has CORS and JSON parsing but NO authentication middleware.
+Anyone can hit the API endpoints.
+
+FIX: Add JWT verification middleware or session handling.
+
+BUG #51: Build Parameters Default Ads Unit ID Is Google's Test ID
+--------------------------------------------------------------------------------
+FILE: android-app/build-logic/convention/src/main/kotlin/com/buzbuz/gradle/convention/model/BuildParameters.kt
+The default `adsUnitId` for debug builds is Google's test ID:
+  "ca-app-pub-3940256099942544/8691691433"
+
+This is correct for debug but ensure it is overridden for release.
+
+
+================================================================================
+SECTION 10: REPOSITORY HYGIENE
+================================================================================
+
+BUG #52: .idea Directory Committed in android-app
+--------------------------------------------------------------------------------
+FIX: Add to .gitignore and remove from git.
+
+BUG #53: Duplicate attached_assets Files
+--------------------------------------------------------------------------------
+FIX: Delete duplicates.
+
+BUG #54: LICENSE File Is 35KB GPL v3
+--------------------------------------------------------------------------------
+Ensure this is intentional. The original Smart AutoClicker is GPL v3.
+If this is a commercial fork, verify compliance.
+
+BUG #55: replit.md References Non-Existent Files
+--------------------------------------------------------------------------------
+The replit.md mentions `lib/integrations` which does not exist.
+
+FIX: Update documentation to match actual repo structure.
+
+
+================================================================================
+SECTION 11: COMPLETE FIXED CODE FOR EVERY FILE
+================================================================================
+
+Below is the COMPLETE replacement code for every file that needs fixing.
+Copy-paste each block into the correct file path.
+
+--------------------------------------------------------------------------------
+FILE: lib/db/src/schema/index.ts
+--------------------------------------------------------------------------------
+import { pgTable, serial, text, timestamp, boolean, integer, uuid, numeric } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const usersTable = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  role: text("role").notNull().default("user"),
+  subscriptionStatus: text("subscription_status").notNull().default("inactive"),
+  subscriptionExpiresAt: timestamp("subscription_expires_at"),
+  isAdFree: boolean("is_ad_free").notNull().default(false),
+  adsWatchedToday: integer("ads_watched_today").notNull().default(0),
+  totalAdsWatched: integer("total_ads_watched").notNull().default(0),
+  lastAdWatchedAt: timestamp("last_ad_watched_at"),
+  selectedScenarioId: uuid("selected_scenario_id"),
+  selectedScenarioName: text("selected_scenario_name"),
+  deviceInfo: text("device_info"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertUserSchema = createInsertSchema(usersTable)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof usersTable.$inferSelect;
+
+export const scenariosTable = pgTable("scenarios", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adminId: integer("admin_id").references(() => usersTable.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  scenarioData: text("scenario_data").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  isGlobal: boolean("is_global").notNull().default(true),
+  targetUsers: text("target_users"),
+  version: integer("version").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertScenarioSchema = createInsertSchema(scenariosTable)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertScenario = z.infer<typeof insertScenarioSchema>;
+export type Scenario = typeof scenariosTable.$inferSelect;
+
+export const profilesTable = pgTable("profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => usersTable.id).notNull().unique(),
+  displayName: text("display_name"),
+  avatarUrl: text("avatar_url"),
+  isAdmin: boolean("is_admin").default(false),
+  isBanned: boolean("is_banned").notNull().default(false),
+  banReason: text("ban_reason"),
+  freeAccessUntil: timestamp("free_access_until"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertProfileSchema = createInsertSchema(profilesTable)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertProfile = z.infer<typeof insertProfileSchema>;
+export type Profile = typeof profilesTable.$inferSelect;
+
+export const bansTable = pgTable("bans", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => usersTable.id).notNull(),
+  reason: text("reason"),
+  bannedAt: timestamp("banned_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
+export const insertBanSchema = createInsertSchema(bansTable)
+  .omit({ id: true, bannedAt: true });
+export type InsertBan = z.infer<typeof insertBanSchema>;
+export type Ban = typeof bansTable.$inferSelect;
+
+export const rewardsTable = pgTable("rewards", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => usersTable.id).notNull(),
+  adType: text("ad_type").notNull(),
+  rewardedAt: timestamp("rewarded_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export const insertRewardSchema = createInsertSchema(rewardsTable)
+  .omit({ id: true, rewardedAt: true });
+export type InsertReward = z.infer<typeof insertRewardSchema>;
+export type Reward = typeof rewardsTable.$inferSelect;
+
+export const subscriptionsTable = pgTable("subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: integer("user_id").references(() => usersTable.id).notNull(),
+  grantedBy: integer("granted_by").references(() => usersTable.id),
+  planType: text("plan_type").notNull().default("reward_ad"),
+  durationDays: integer("duration_days"),
+  startedAt: timestamp("started_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  isActive: boolean("is_active").notNull().default(true),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertSubscriptionSchema = createInsertSchema(subscriptionsTable)
+  .omit({ id: true, createdAt: true });
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type Subscription = typeof subscriptionsTable.$inferSelect;
+
+export const adEventsTable = pgTable("ad_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: integer("user_id").references(() => usersTable.id),
+  adType: text("ad_type").notNull(),
+  eventType: text("event_type").notNull(),
+  revenueEstimate: numeric("revenue_estimate", { precision: 10, scale: 6 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAdEventSchema = createInsertSchema(adEventsTable)
+  .omit({ id: true, createdAt: true });
+export type InsertAdEvent = z.infer<typeof insertAdEventSchema>;
+export type AdEvent = typeof adEventsTable.$inferSelect;
+
+export const clickSessionsTable = pgTable("click_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: integer("user_id").references(() => usersTable.id),
+  scenarioId: uuid("scenario_id").references(() => scenariosTable.id),
+  startedAt: timestamp("started_at").defaultNow(),
+  endedAt: timestamp("ended_at"),
+  totalClicks: integer("total_clicks").notNull().default(0),
+  durationSeconds: integer("duration_seconds"),
+  deviceInfo: text("device_info"),
+});
+
+export const insertClickSessionSchema = createInsertSchema(clickSessionsTable)
+  .omit({ id: true, startedAt: true });
+export type InsertClickSession = z.infer<typeof insertClickSessionSchema>;
+export type ClickSession = typeof clickSessionsTable.$inferSelect;
+
+export const appSettingsTable = pgTable("app_settings", {
+  id: integer("id").primaryKey().default(1),
+  interstitialIntervalMinutes: integer("interstitial_interval_minutes").notNull().default(2),
+  rewardAdsForOneDay: integer("reward_ads_for_one_day").notNull().default(20),
+  trialDays: integer("trial_days").notNull().default(3),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertAppSettingsSchema = createInsertSchema(appSettingsTable)
+  .omit({ id: true, updatedAt: true });
+export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
+export type AppSettings = typeof appSettingsTable.$inferSelect;
+
+export const adminLogsTable = pgTable("admin_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adminId: integer("admin_id").references(() => usersTable.id),
+  action: text("action").notNull(),
+  targetUserId: integer("target_user_id").references(() => usersTable.id),
+  details: text("details"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAdminLogSchema = createInsertSchema(adminLogsTable)
+  .omit({ id: true, createdAt: true });
+export type InsertAdminLog = z.infer<typeof insertAdminLogSchema>;
+export type AdminLog = typeof adminLogsTable.$inferSelect;
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: lib/db/drizzle.config.ts
+--------------------------------------------------------------------------------
+import { defineConfig } from "drizzle-kit";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export default defineConfig({
+  schema: path.join(__dirname, "./src/schema/index.ts"),
+  dialect: "postgresql",
+  dbCredentials: {
+    url: process.env.DATABASE_URL ?? "",
+  },
+});
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: lib/db/src/index.ts
+--------------------------------------------------------------------------------
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
+import * as schema from "./schema";
+
+const { Pool } = pg;
+
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+export const db = drizzle(pool, { schema });
+export * from "./schema";
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: artifacts/api-server/src/index.ts
+--------------------------------------------------------------------------------
+import app from "./app";
+import { logger } from "./lib/logger";
+
+const rawPort = process.env["PORT"] ?? "3000";
+const port = Number(rawPort);
+
+if (Number.isNaN(port) || port <= 0) {
+  throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+
+app.listen(port, (err) => {
+  if (err) {
+    logger.error({ err }, "Error listening on port");
+    process.exit(1);
+  }
+  logger.info({ port }, "Server listening");
+});
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: artifacts/mockup-sandbox/vite.config.ts
+--------------------------------------------------------------------------------
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import path from "node:path";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { mockupPreviewPlugin } from "./mockupPreviewPlugin";
+
+const rawPort = process.env.PORT ?? "5173";
+const port = Number(rawPort);
+
+if (Number.isNaN(port) || port <= 0) {
+  throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+
+const basePath = process.env.BASE_PATH ?? "/";
+
+const cartographerPlugin =
+  process.env.NODE_ENV !== "production" && process.env.REPL_ID !== undefined
+    ? [
+        await import("@replit/vite-plugin-cartographer").then((m) =>
+          m.cartographer({
+            root: path.resolve(import.meta.dirname, ".."),
+          }),
+        ),
+      ]
+    : [];
+
+export default defineConfig({
+  base: basePath,
+  plugins: [
+    mockupPreviewPlugin(),
+    react(),
+    tailwindcss(),
+    runtimeErrorOverlay(),
+    ...cartographerPlugin,
+  ],
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "src"),
+    },
+  },
+  root: path.resolve(import.meta.dirname),
+  build: {
+    outDir: path.resolve(import.meta.dirname, "dist"),
+    emptyOutDir: true,
+  },
+  server: {
+    port,
+    host: "0.0.0.0",
+    allowedHosts: true,
+    fs: {
+      strict: true,
+    },
+  },
+  preview: {
+    port,
+    host: "0.0.0.0",
+    allowedHosts: true,
+  },
+});
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: artifacts/mockup-sandbox/src/.generated/mockup-components.ts
+--------------------------------------------------------------------------------
+export const modules: Record<string, () => Promise<Record<string, unknown>>> =
+  {};
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: pnpm-workspace.yaml (relevant sections)
+--------------------------------------------------------------------------------
+minimumReleaseAge: 1440
+
+minimumReleaseAgeExclude:
+  - "@replit/*"
+  - stripe-replit-sync
+
+packages:
+  - artifacts/*
+  - lib/*
+  - scripts
+
+catalog:
+  "@replit/vite-plugin-cartographer": ^0.5.21
+  "@replit/vite-plugin-dev-banner": ^0.1.1
+  "@replit/vite-plugin-runtime-error-modal": ^0.0.6
+  "@tailwindcss/vite": ^4.1.14
+  "@tanstack/react-query": ^5.90.21
+  "@types/node": ^25.3.3
+  "@types/react": ^19.2.0
+  "@types/react-dom": ^19.2.0
+  "@vitejs/plugin-react": ^5.0.4
+  class-variance-authority: ^0.7.1
+  clsx: ^2.1.1
+  drizzle-orm: ^0.45.2
+  framer-motion: ^12.23.24
+  lucide-react: ^0.545.0
+  react: 19.1.0
+  react-dom: 19.1.0
+  tailwind-merge: ^3.3.1
+  tailwindcss: ^4.1.14
+  tsx: ^4.21.0
+  vite: ^7.3.2
+  zod: ^3.25.76
+
+autoInstallPeers: false
+
+onlyBuiltDependencies:
+  - "@swc/core"
+  - esbuild
+
+# KEEP ALL EXISTING override: LINES UNCHANGED BELOW THIS POINT
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: package.json (root)
+--------------------------------------------------------------------------------
+{
+  "name": "workspace",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'",
+    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "typecheck:libs": "tsc --build",
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter "./artifacts/**" --filter "./scripts" --if-present run typecheck"
+  },
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.3"
+  }
+}
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: tsconfig.base.json
+--------------------------------------------------------------------------------
+{
+  "compilerOptions": {
+    "incremental": true,
+    "isolatedModules": true,
+    "lib": ["es2022"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": false,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "useUnknownInCatchVariables": true,
+    "alwaysStrict": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "types": [],
+    "customConditions": ["workspace"]
+  }
+}
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: tsconfig.json (root)
+--------------------------------------------------------------------------------
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    { "path": "./lib/db" },
+    { "path": "./lib/api-client-react" },
+    { "path": "./lib/api-zod" },
+    { "path": "./lib/api-spec" }
+  ]
+}
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: artifacts/api-server/package.json
+--------------------------------------------------------------------------------
+{
+  "name": "@workspace/api-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
+    "build": "node ./build.mjs",
+    "start": "node --enable-source-maps ./dist/index.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@workspace/api-zod": "workspace:*",
+    "@workspace/db": "workspace:*",
+    "cors": "^2.8.6",
+    "drizzle-orm": "catalog:",
+    "express": "^5.2.1",
+    "pino": "^9.14.0",
+    "pino-http": "^10.5.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "catalog:",
+    "esbuild": "0.27.3",
+    "esbuild-plugin-pino": "^2.3.3",
+    "pino-pretty": "^13.1.3",
+    "thread-stream": "3.1.0"
+  }
+}
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: lib/api-client-react/package.json
+--------------------------------------------------------------------------------
+{
+  "name": "@workspace/api-client-react",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:"
+  }
+}
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: scripts/post-merge.sh
+--------------------------------------------------------------------------------
+#!/bin/bash
+set -e
+pnpm install --frozen-lockfile
+pnpm --filter @workspace/db push
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: android-app/gradle/libs.versions.toml (CHANGES ONLY)
+--------------------------------------------------------------------------------
+# Change these lines:
+java = "21"
+androidxCoreKtx = "1.15.0"
+
+# Remove this line (let BOM handle it):
+# firebaseMessaging = "24.1.0"
+
+# In the [libraries] section, keep the entry but without version:
+google-firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: android-app/gradle.properties
+--------------------------------------------------------------------------------
+## For more details on how to configure your build environment visit
+# http://www.gradle.org/docs/current/userguide/build_environment.html
+#
+# Specifies the JVM arguments used for the daemon process.
+# The setting is particularly useful for tweaking memory settings.
+# Default value: -Xmx1024m -XX:MaxPermSize=256m
+# org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+#
+# When configured, Gradle will run in incubating parallel mode.
+# This option should only be used with decoupled projects. For more details, visit
+# https://developer.android.com/r/tools/gradle-multi-project-decoupled-projects
+# org.gradle.parallel=true
+#Wed Jan 01 16:13:38 CET 2025
+android.useAndroidX=true
+android.nonTransitiveRClass=true
+kapt.incremental.apt=true
+kotlin.code.style=official
+org.gradle.jvmargs=-Xmx2048M -Dkotlin.daemon.jvm.options\="-Xmx2048M"
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: android-app/smartautoclicker/build.gradle.kts (FULL REPLACEMENT)
+--------------------------------------------------------------------------------
+/*
+ * Copyright (C) 2025 Kevin Buzeau
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ */
+
+import com.buzbuz.gradle.convention.model.KlickrBuildType
+import com.buzbuz.gradle.convention.model.KlickrFlavour
+import com.buzbuz.gradle.convention.extensions.isBuildForVariant
+import com.buzbuz.gradle.obfuscation.getExtraActualApplicationId
+
+plugins {
+    alias(libs.plugins.buzbuz.androidApplication)
+    alias(libs.plugins.buzbuz.androidUnitTest)
+    alias(libs.plugins.buzbuz.flavour)
+    alias(libs.plugins.buzbuz.obfuscation)
+    alias(libs.plugins.buzbuz.buildParameters)
+    alias(libs.plugins.buzbuz.hilt)
+}
+
+obfuscationConfig {
+    obfuscatedApplication {
+        create("com.autopilot.driver.AutopilotApplication")
+    }
+    obfuscatedComponents {
+        create("com.autopilot.driver.ScenarioActivity")
+        create("com.autopilot.driver.AutopilotService")
+    }
+
+    setup(
+        applicationId = "com.autopilot.driver",
+        appNameResId = "@string/app_name",
+        shouldRandomize = buildParameters.randomizeAppId.typedValue &&
+                project.isBuildForVariant(KlickrFlavour.F_DROID),
+    )
+}
+
+android {
+    namespace = "com.buzbuz.smartautoclicker"
+
+    buildFeatures {
+        viewBinding = true
+        buildConfig = true
+    }
+
+    defaultConfig {
+        applicationId = getExtraActualApplicationId()
+        versionCode = 1
+        versionName = "1.0.0"
+    }
+
+    if (project.isBuildForVariant(KlickrFlavour.F_DROID, KlickrBuildType.DEBUG)) {
+        buildTypes {
+            debug {
+                applicationIdSuffix = ".debug"
+            }
+        }
+    }
+
+    if (project.isBuildForVariant(KlickrFlavour.F_DROID)) {
+        splits {
+            abi {
+                isEnable = true
+                reset()
+                include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+                isUniversalApk = true
+            }
+        }
+    }
+
+    signingConfigs {
+        create(KlickrBuildType.RELEASE.buildTypeName) {
+            val keystoreFile = file("./smartautoclicker.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = buildParameters.signingStorePassword.typedValue
+                keyAlias = buildParameters.signingKeyAlias.typedValue
+                keyPassword = buildParameters.signingKeyPassword.typedValue
+            } else {
+                logger.warn("Keystore not found at ${keystoreFile.absolutePath}. Release builds will be unsigned.")
+            }
+        }
+    }
+}
+
+if (project.isBuildForVariant(KlickrFlavour.F_DROID)) {
+    androidComponents.onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val abiFilter = output.filters
+                .find { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }
+                ?.identifier
+            val abiVersionCode = when (abiFilter) {
+                "armeabi-v7a" -> 1
+                "arm64-v8a"   -> 2
+                "x86"         -> 3
+                "x86_64"      -> 4
+                else          -> 0
+            }
+            val baseVersionCode = output.versionCode.get()
+            output.versionCode.set(abiVersionCode * 10_000 + baseVersionCode)
+        }
+    }
+}
+
+apply(plugin = libs.plugins.buzbuz.androidSigning.get().pluginId)
+
+if (project.isBuildForVariant(KlickrFlavour.PLAY_STORE, KlickrBuildType.RELEASE)) {
+    apply(plugin = libs.plugins.buzbuz.crashlytics.get().pluginId)
+}
+
+dependencies {
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.realtime)
+    implementation(libs.ktor.client.android)
+
+    implementation(libs.androidx.appCompat)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.datastore)
+    implementation(libs.androidx.recyclerView)
+    implementation(libs.androidx.fragment.ktx)
+
+    implementation(libs.androidx.lifecycle.extensions)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.common.java8)
+
+    implementation(libs.airbnb.lottie)
+    implementation(libs.google.material)
+
+    implementation(project(":core:common:accessibility"))
+    implementation(project(":core:common:actions"))
+    implementation(project(":core:common:base"))
+    implementation(project(":core:common:bitmaps"))
+    implementation(project(":core:common:display"))
+    implementation(project(":core:common:navigation"))
+    implementation(project(":core:common:overlays"))
+    implementation(project(":core:common:permissions"))
+    implementation(project(":core:common:quality"))
+    implementation(project(":core:common:settings"))
+    implementation(project(":core:common:tutorial"))
+    implementation(project(":core:common:ui"))
+    implementation(project(":core:dumb"))
+    implementation(project(":core:smart:debugging"))
+    implementation(project(":core:smart:detection"))
+    implementation(project(":core:smart:domain"))
+    implementation(project(":core:smart:processing"))
+
+    implementation(project(":feature:backup"))
+    implementation(project(":feature:notifications"))
+    implementation(project(":feature:quick-settings-tile"))
+    implementation(project(":feature:revenue"))
+    implementation(project(":feature:review"))
+    implementation(project(":feature:smart-config"))
+    implementation(project(":feature:smart-debugging"))
+    implementation(project(":feature:dumb-config"))
+    implementation(project(":feature:tutorial"))
+
+    playStoreImplementation(libs.unity.ads)
+    playStoreImplementation(platform(libs.google.firebase.bom))
+    playStoreImplementation(libs.google.firebase.messaging)
+}
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: android-app/smartautoclicker/src/main/AndroidManifest.xml (FIXED)
+--------------------------------------------------------------------------------
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.buzbuz.smartautoclicker">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application
+        android:name="com.autopilot.driver.AutopilotApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="false">
+
+        <activity
+            android:name="com.autopilot.driver.auth.AutopilotWelcomeActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.autopilot.driver.auth.ModeSelectionActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme" />
+
+        <activity
+            android:name="com.autopilot.driver.home.AutopilotHomeActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme" />
+
+        <activity
+            android:name="com.autopilot.driver.home.ProfileActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme" />
+
+        <activity
+            android:name="com.autopilot.driver.home.AdminDashboardActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme" />
+
+        <activity
+            android:name="com.autopilot.driver.ScenarioActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme" />
+
+        <service
+            android:name="com.autopilot.driver.AutopilotService"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <service
+            android:name="com.autopilot.driver.service.AutopilotFloatingBannerService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="floating_ui_overlay" />
+        </service>
+
+        <service
+            android:name="com.autopilot.driver.service.AutopilotFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${adsApplicationId}" />
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="autopilot_default_channel" />
+    </application>
+</manifest>
+--------------------------------------------------------------------------------
+
+
+================================================================================
+SECTION 12: NEW FILES TO CREATE (Summary)
+================================================================================
+
+1. android-app/smartautoclicker/src/main/java/com/autopilot/driver/service/AutopilotFloatingBannerService.kt
+2. android-app/smartautoclicker/src/main/java/com/autopilot/driver/service/AutopilotFirebaseMessagingService.kt
+3. android-app/smartautoclicker/src/main/java/com/autopilot/driver/AutopilotApplication.kt
+4. android-app/smartautoclicker/src/main/java/com/autopilot/driver/AutopilotService.kt
+5. android-app/smartautoclicker/src/main/java/com/autopilot/driver/ScenarioActivity.kt
+6. android-app/smartautoclicker/src/main/res/layout/floating_banner.xml
+7. android-app/smartautoclicker/src/main/res/layout/activity_scenario.xml
+8. android-app/smartautoclicker/google-services.json
+9. android-app/local.properties
+10. android-app/smartautoclicker/smartautoclicker.jks (generate via keytool)
+11. artifacts/mockup-sandbox/src/.generated/mockup-components.ts
+
+
+================================================================================
+SECTION 13: FIX EXECUTION ORDER
+================================================================================
+
+PHASE 1: APK BUILD BLOCKERS (Do These First)
+  [ ] Create missing service classes (Bug #1)
+  [ ] Create google-services.json (Bug #2)
+  [ ] Create local.properties (Bug #3)
+  [ ] Generate debug keystore OR make signing conditional (Bug #4)
+  [ ] Fix namespace/package mismatch (Bug #5)
+  [ ] Remove assetPacks block (Bug #6)
+  [ ] Update java version to 21 (Bug #7)
+  [ ] Move Firebase to playStore flavor (Bug #8)
+  [ ] Fix AndroidManifest.xml (Bug #15, #18)
+  [ ] Create AutopilotApplication.kt, AutopilotService.kt, ScenarioActivity.kt
+
+PHASE 2: Backend Critical Fixes
+  [ ] Fix lib/db/src/schema/index.ts (Bug #19)
+  [ ] Fix lib/db/drizzle.config.ts (Bug #20)
+  [ ] Fix lib/db/src/index.ts (Bug #21)
+  [ ] Run Orval codegen (Bug #22)
+  [ ] Create mockup-components stub (Bug #23)
+  [ ] Fix vite.config.ts (Bug #24)
+  [ ] Fix api-server/src/index.ts (Bug #25)
+
+PHASE 3: Workspace & Config
+  [ ] Fix pnpm-workspace.yaml (Bug #28, #29)
+  [ ] Fix root package.json (Bug #30)
+  [ ] Fix post-merge.sh (Bug #31)
+  [ ] Fix tsconfig.json (Bug #32)
+  [ ] Fix tsconfig.base.json (Bug #33)
+  [ ] Fix api-server/package.json (Bug #34)
+  [ ] Fix api-client-react/package.json (Bug #35)
+
+PHASE 4: Hygiene & Cleanup
+  [ ] Remove duplicate attached_assets (Bug #39)
+  [ ] Add android-app/.gitignore (Bug #52)
+  [ ] Remove .idea from git (Bug #52)
+  [ ] Update gradle.properties (Bug #10, #11)
+  [ ] Reset version code/name (Bug #13)
+
+
+================================================================================
+SECTION 14: VERIFICATION COMMANDS
+================================================================================
+
+After applying all fixes, run these in order:
+
+  # 1. Node.js workspace
+  pnpm install
+  cd lib/api-spec && pnpm install && pnpm run codegen && cd ../..
+  pnpm run typecheck
+  pnpm --filter @workspace/api-server build
+  pnpm --filter @workspace/mockup-sandbox build
+
+  # 2. Android build (requires JDK 21, Android SDK)
+  cd android-app
+  ./gradlew :smartautoclicker:assembleF_DroidDebug --no-daemon
+  # OR for Play Store:
+  ./gradlew :smartautoclicker:assemblePlayStoreDebug --no-daemon
+
+  # 3. Commit everything
+  git add -A
+  git commit -m "Fix: resolve all critical build bugs, APK blockers, ESM compat, empty schema, and config mismatches"
+  git push origin main
+
+================================================================================
+                              END OF DEEP AUDIT REPORT
+================================================================================

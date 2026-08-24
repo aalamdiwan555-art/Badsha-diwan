@@ -1,36 +1,276 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 0.2.0
+  description: Autopilot account, mode, and administrator API
 servers:
   - url: /api
-    description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: account
+  - name: admin
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/HealthStatus"
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+  /auth/signup:
+    post:
+      operationId: signUp
+      tags: [auth]
+      summary: Create a Supabase account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuthCredentials" }
+      responses:
+        "200": { description: Auth session, content: { application/json: { schema: { $ref: "#/components/schemas/AuthSession" } } } }
+  /auth/signin:
+    post:
+      operationId: signIn
+      tags: [auth]
+      summary: Sign in to Supabase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuthCredentials" }
+      responses:
+        "200": { description: Auth session, content: { application/json: { schema: { $ref: "#/components/schemas/AuthSession" } } } }
+  /modes:
+    get:
+      operationId: listModes
+      tags: [account]
+      summary: List published global modes
+      responses:
+        "200":
+          description: Published modes
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Mode" } }
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [account]
+      security: [{ bearerAuth: [] }]
+      summary: Get the signed-in profile
+      responses:
+        "200": { description: Profile, content: { application/json: { schema: { $ref: "#/components/schemas/Profile" } } } }
+  /admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: List profiles
+      responses:
+        "200": { description: Profiles, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Profile" } } } } }
+  /admin/scenarios:
+    get:
+      operationId: listScenarios
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: List all scenarios
+      responses:
+        "200": { description: Scenarios, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Mode" } } } } }
+    post:
+      operationId: createScenario
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: Create a scenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScenarioInput" }
+      responses:
+        "201": { description: Created scenario, content: { application/json: { schema: { $ref: "#/components/schemas/Mode" } } } }
+  /admin/scenarios/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: updateScenario
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: Update a scenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScenarioUpdate" }
+      responses:
+        "200": { description: Updated scenario, content: { application/json: { schema: { $ref: "#/components/schemas/Mode" } } } }
+    delete:
+      operationId: deleteScenario
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: Delete a scenario
+      responses:
+        "204": { description: Deleted }
+  /admin/settings:
+    get:
+      operationId: getSettings
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: Get global settings
+      responses:
+        "200": { description: Settings, content: { application/json: { schema: { $ref: "#/components/schemas/AppSettings" } } } }
+    patch:
+      operationId: updateSettings
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: Update global settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AppSettingsInput" }
+      responses:
+        "200": { description: Updated settings, content: { application/json: { schema: { $ref: "#/components/schemas/AppSettings" } } } }
+  /admin/users/{userId}/subscription:
+    post:
+      operationId: grantSubscription
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: Grant free access
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [durationDays]
+              properties:
+                durationDays: { type: integer, minimum: 1, maximum: 3650 }
+                note: { type: string }
+      responses:
+        "201": { description: Subscription, content: { application/json: { schema: { $ref: "#/components/schemas/Subscription" } } } }
+  /admin/users/{userId}/ban:
+    post:
+      operationId: setBanned
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: Ban or unban a user
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                banned: { type: boolean }
+                reason: { type: string }
+      responses:
+        "200": { description: Updated profile, content: { application/json: { schema: { $ref: "#/components/schemas/Profile" } } } }
+  /admin/users/{userId}/ad-free:
+    post:
+      operationId: setAdFree
+      tags: [admin]
+      security: [{ bearerAuth: [] }]
+      summary: Enable or disable ad-free access
+      parameters:
+        - { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [adFree]
+              properties:
+                adFree: { type: boolean }
+      responses:
+        "200": { description: Updated profile, content: { application/json: { schema: { $ref: "#/components/schemas/Profile" } } } }
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
-        status:
-          type: string
-      required:
-        - status
-
+        status: { type: string }
+    AuthCredentials:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+    AuthSession:
+      type: object
+      additionalProperties: true
+    Mode:
+      type: object
+      required: [id, adminId, name, scenarioData]
+      properties:
+        id: { type: string, format: uuid }
+        adminId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        description: { type: [string, "null"] }
+        scenarioData: { type: object, additionalProperties: true }
+        isActive: { type: boolean }
+        isGlobal: { type: boolean }
+        targetUsers: { type: [array, "null"], items: { type: string, format: uuid } }
+        version: { type: integer }
+    ScenarioInput:
+      type: object
+      required: [adminId, name, scenarioData]
+      properties:
+        adminId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        description: { type: [string, "null"] }
+        scenarioData: { type: object, additionalProperties: true }
+        isGlobal: { type: boolean }
+    ScenarioUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+        description: { type: [string, "null"] }
+        scenarioData: { type: object, additionalProperties: true }
+        isActive: { type: boolean }
+    Profile:
+      type: object
+      required: [id, email, role, subscriptionStatus, isAdFree, adsWatchedToday, isBanned]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role: { type: string }
+        subscriptionStatus: { type: string }
+        subscriptionExpiresAt: { type: [string, "null"], format: date-time }
+        isAdFree: { type: boolean }
+        adsWatchedToday: { type: integer }
+        isBanned: { type: boolean }
+        banReason: { type: [string, "null"] }
+    AppSettings:
+      type: object
+      required: [id, interstitialIntervalMinutes, rewardAdsForOneDay, trialDays]
+      properties:
+        id: { type: integer }
+        interstitialIntervalMinutes: { type: integer, minimum: 1, maximum: 60 }
+        rewardAdsForOneDay: { type: integer, minimum: 1, maximum: 100 }
+        trialDays: { type: integer, minimum: 0, maximum: 30 }
+    AppSettingsInput:
+      type: object
+      required: [interstitialIntervalMinutes, rewardAdsForOneDay, trialDays]
+      properties:
+        interstitialIntervalMinutes: { type: integer, minimum: 1, maximum: 60 }
+        rewardAdsForOneDay: { type: integer, minimum: 1, maximum: 100 }
+        trialDays: { type: integer, minimum: 0, maximum: 30 }
+    Subscription:
+      type: object
+      additionalProperties: true

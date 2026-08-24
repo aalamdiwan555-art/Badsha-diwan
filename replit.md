@@ -1,6 +1,6 @@
-# [Project name]
+# Badsha Diwan
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Badsha Diwan contains the Autopilot Android client and its account, scenario, and administrator API.
 
 ## Run & Operate
 
@@ -22,23 +22,30 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `android-app/` — Android client source and flavor-specific resources.
+- `lib/api-spec/openapi.yaml` — source of truth for API contracts.
+- `lib/db/src/schema/index.ts` — source of truth for PostgreSQL tables and types.
+- `artifacts/api-server/` — Express API routes and authentication middleware.
+- `artifacts/mockup-sandbox/` — component preview server.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- API response and database identifiers use UUIDs consistently.
+- Generated API clients are regenerated from the OpenAPI document; do not edit generated files manually.
+- Android release signing and Firebase configuration are supplied by the build environment, never committed.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The project supports account sign-up/sign-in, published automation modes, user profiles, administrator scenario management, user access controls, and subscription/ad-free management.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+No additional preferences recorded.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Run `pnpm --filter @workspace/api-spec run codegen` after changing `lib/api-spec/openapi.yaml`.
+- Provide real `DATABASE_URL`, Supabase JWT, Firebase, and release signing configuration only through secure build/deployment configuration.
 
 ## Pointers
 
