@@ -10,10 +10,7 @@ router.get("/modes", async (_req, res) => {
     .select()
     .from(scenariosTable)
     .where(eq(scenariosTable.isActive, true));
-  res.json(modes.filter((mode) => mode.isGlobal).map((mode) => ({
-    ...mode,
-    scenarioData: mode.scenarioData ? JSON.parse(mode.scenarioData) : {},
-  })));
+  res.json(modes.filter((mode) => mode.isGlobal));
 });
 
 router.get("/profile", requireAuth, async (req, res) => {
