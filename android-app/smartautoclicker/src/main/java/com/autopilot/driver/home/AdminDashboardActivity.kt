@@ -8,7 +8,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.text.InputType
 import androidx.appcompat.app.AlertDialog
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.autopilot.driver.auth.AutopilotWelcomeActivity
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
@@ -17,15 +17,11 @@ import com.autopilot.driver.data.remote.AuthResult
 import com.autopilot.driver.data.remote.SupabaseRestClient
 import com.autopilot.driver.data.remote.ScenarioValidator
 import com.buzbuz.smartautoclicker.R
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
-/**
- * Administrator-only entry point.
- *
- * Mutating controls call server-authorized endpoints. This screen deliberately
- * never treats a client-side email check as permission.
- */
-class AdminDashboardActivity : ComponentActivity() {
+@AndroidEntryPoint
+class AdminDashboardActivity : AppCompatActivity() {
 
     private lateinit var statusText: TextView
     private lateinit var modeCount: TextView
