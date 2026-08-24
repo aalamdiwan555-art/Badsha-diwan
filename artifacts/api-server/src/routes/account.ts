@@ -12,7 +12,7 @@ router.get("/modes", async (_req, res) => {
     .where(eq(scenariosTable.isActive, true));
   res.json(modes.filter((mode) => mode.isGlobal).map((mode) => ({
     ...mode,
-    scenarioData: mode.scenarioData ?? {},
+    scenarioData: mode.scenarioData ? JSON.parse(mode.scenarioData) : {},
   })));
 });
 

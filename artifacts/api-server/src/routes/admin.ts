@@ -23,15 +23,15 @@ router.get("/admin/scenarios", async (_req, res) => {
 
 router.post("/admin/scenarios", async (req, res) => {
   const { adminId, name, description, scenarioData, isGlobal = true } = req.body;
-  if (typeof adminId !== "string" || typeof name !== "string" || !scenarioData) {
-    res.status(400).json({ error: "adminId, name, and scenarioData are required" });
+  if (typeof adminId !== "string" || typeof name !== "string" || !scenarioData || typeof scenarioData !== "object" || Array.isArray(scenarioData)) {
+    res.status(400).json({ error: "adminId, name, and scenarioData object are required" });
     return;
   }
   const created = await db.insert(scenariosTable).values({
     adminId,
     name: name.trim(),
     description: description ?? null,
-    scenarioData,
+    scenarioData: JSON.stringify(scenarioData),
     isGlobal: Boolean(isGlobal),
   }).returning();
   res.status(201).json(created[0]);
@@ -41,7 +41,7 @@ router.patch("/admin/scenarios/:id", async (req, res) => {
   const updated = await db.update(scenariosTable).set({
     ...(typeof req.body.name === "string" ? { name: req.body.name.trim() } : {}),
     ...(req.body.description !== undefined ? { description: req.body.description } : {}),
-    ...(req.body.scenarioData !== undefined ? { scenarioData: req.body.scenarioData } : {}),
+    ...(req.body.scenarioData !== undefined ? { scenarioData: JSON.stringify(req.body.scenarioData) } : {}),
     ...(req.body.isActive !== undefined ? { isActive: Boolean(req.body.isActive) } : {}),
     updatedAt: new Date(),
   }).where(eq(scenariosTable.id, req.params.id)).returning();
