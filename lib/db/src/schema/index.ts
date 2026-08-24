@@ -9,7 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import { z } from "zod";
 
 export const usersTable = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -55,6 +55,7 @@ export type Scenario = typeof scenariosTable.$inferSelect;
 
 export const profilesTable = pgTable("profiles", {
   id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => usersTable.id).unique(),
   email: text("email").notNull().unique(),
   role: text("role").notNull().default("user"),
   subscriptionStatus: text("subscription_status").notNull().default("inactive"),
