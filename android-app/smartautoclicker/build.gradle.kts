@@ -56,8 +56,8 @@ android {
 
     defaultConfig {
         applicationId = getExtraActualApplicationId()
-        versionCode = 94
-        versionName = "4.0.0-beta09"
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
     if (project.isBuildForVariant(KlickrFlavour.F_DROID, KlickrBuildType.DEBUG)) {
@@ -81,29 +81,18 @@ android {
 
     signingConfigs {
         create(KlickrBuildType.RELEASE.buildTypeName) {
-            storeFile = file("./smartautoclicker.jks")
-            storePassword = buildParameters.signingStorePassword.typedValue
-            keyAlias = buildParameters.signingKeyAlias.typedValue
-            keyPassword = buildParameters.signingKeyPassword.typedValue
+            val keystoreFile = file("./smartautoclicker.jks")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = buildParameters.signingStorePassword.typedValue
+                keyAlias = buildParameters.signingKeyAlias.typedValue
+                keyPassword = buildParameters.signingKeyPassword.typedValue
+            } else {
+                logger.warn("Keystore not found at ${keystoreFile.absolutePath}. Release builds will be unsigned.")
+            }
         }
     }
 
-    if (project.isBuildForVariant(KlickrFlavour.PLAY_STORE)) {
-        assetPacks.addAll(
-            listOf(
-                ":core:smart:detection-models:models:text:arabic",
-                ":core:smart:detection-models:models:text:chinese_simplified",
-                ":core:smart:detection-models:models:text:chinese_traditional",
-                ":core:smart:detection-models:models:text:cyrillic",
-                ":core:smart:detection-models:models:text:devanagari",
-                ":core:smart:detection-models:models:text:japanese",
-                ":core:smart:detection-models:models:text:kannada",
-                ":core:smart:detection-models:models:text:korean",
-                ":core:smart:detection-models:models:text:tamil",
-                ":core:smart:detection-models:models:text:telugu",
-            )
-        )
-    }
 }
 
 if (project.isBuildForVariant(KlickrFlavour.F_DROID)) {
@@ -182,7 +171,7 @@ dependencies {
     implementation(project(":feature:dumb-config"))
     implementation(project(":feature:tutorial"))
 
-    implementation(libs.unity.ads)
-    implementation(platform(libs.google.firebase.bom))
-    implementation(libs.google.firebase.messaging)
+    playStoreImplementation(libs.unity.ads)
+    playStoreImplementation(platform(libs.google.firebase.bom))
+    playStoreImplementation(libs.google.firebase.messaging)
 }
