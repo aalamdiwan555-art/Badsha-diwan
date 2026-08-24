@@ -14,7 +14,6 @@ import android.view.Gravity
 import android.view.WindowManager
 import android.widget.TextView
 import com.autopilot.driver.home.AutopilotHomeActivity
-import com.buzbuz.smartautoclicker.R
 import androidx.core.app.NotificationCompat
 
 class AutopilotFloatingBannerService : Service() {
@@ -65,7 +64,7 @@ class AutopilotFloatingBannerService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Autopilot running")
             .setContentText("Floating status is active")
-            .setSmallIcon(R.mipmap.ic_smart_auto_clicker)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build()
