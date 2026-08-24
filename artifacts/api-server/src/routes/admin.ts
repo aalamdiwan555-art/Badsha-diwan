@@ -128,7 +128,7 @@ router.post("/admin/users/:userId/ban", async (req, res) => {
     isBanned: Boolean(banned),
     banReason: banned && typeof reason === "string" ? reason.trim() || null : null,
     updatedAt: new Date(),
-  }).where(eq(profilesTable.id, req.params.userId)).returning();
+  }).where(eq(profilesTable.userId, req.params.userId)).returning();
   if (!updated[0]) {
     res.status(404).json({ error: "Profile not found" });
     return;
@@ -140,7 +140,7 @@ router.post("/admin/users/:userId/ad-free", async (req, res) => {
   const updated = await db.update(profilesTable).set({
     isAdFree: Boolean(req.body.adFree),
     updatedAt: new Date(),
-  }).where(eq(profilesTable.id, req.params.userId)).returning();
+  }).where(eq(profilesTable.userId, req.params.userId)).returning();
   if (!updated[0]) {
     res.status(404).json({ error: "Profile not found" });
     return;

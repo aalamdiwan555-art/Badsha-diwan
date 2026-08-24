@@ -54,7 +54,7 @@ export type InsertScenario = z.infer<typeof insertScenarioSchema>;
 export type Scenario = typeof scenariosTable.$inferSelect;
 
 export const profilesTable = pgTable("profiles", {
-  id: uuid("id").primaryKey().references(() => usersTable.id),
+  id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   role: text("role").notNull().default("user"),
   subscriptionStatus: text("subscription_status").notNull().default("inactive"),
