@@ -36,6 +36,9 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
       - name: Build APK
         run: ./gradlew :smartautoclicker:assembleF_DroidDebug --no-daemon --stacktrace
 
