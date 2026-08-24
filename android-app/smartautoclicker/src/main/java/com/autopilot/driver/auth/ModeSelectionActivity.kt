@@ -2,41 +2,24 @@ package com.autopilot.driver.auth
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.autopilot.driver.data.remote.AuthResult
 import com.autopilot.driver.data.remote.AutopilotAccountRepository
-import com.autopilot.driver.data.remote.AutopilotModeCache
 import com.autopilot.driver.data.remote.AutopilotSessionStore
-import com.autopilot.driver.data.remote.RemoteModeInstaller
 import com.autopilot.driver.data.remote.ScenarioMode
 import com.autopilot.driver.data.remote.SupabaseRestClient
-import com.buzbuz.smartautoclicker.R
+import com.autopilot.driver.home.AdminDashboardActivity
 import com.autopilot.driver.home.AutopilotHomeActivity
-import com.buzbuz.smartautoclicker.core.dumb.domain.IDumbRepository
+import com.buzbuz.smartautoclicker.R
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 import kotlinx.coroutines.launch
 
-/**
- * First-login mode picker. The list is read-only; only the administrator can
- * create or edit the scenarios that appear here.
- */
 @AndroidEntryPoint
-class ModeSelectionActivity : ComponentActivity() {
-
-    @Inject
-    lateinit var dumbRepository: IDumbRepository
-
-    private lateinit var modeList: LinearLayout
-    private lateinit var statusText: TextView
-    private lateinit var retryButton: Button
-    private var selectedModeId: String? = null
-    private val modeCache by lazy { AutopilotModeCache(applicationContext) }
+class ModeSelectionActivity : AppCompatActivity() {
 
     private val accountRepository by lazy {
         AutopilotAccountRepository(
@@ -47,101 +30,52 @@ class ModeSelectionActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val cachedModes = modeCache.loadModes()
-        if (cachedModes.isNotEmpty() &&
-            cachedModes.any { it.id == modeCache.selectedModeId() }
-        ) {
-            openClicker()
-            return
-        }
         setContentView(R.layout.activity_mode_selection)
-        modeList = findViewById(R.id.mode_list)
-        statusText = findViewById(R.id.mode_status)
-        retryButton = findViewById(R.id.mode_retry)
-        retryButton.setOnClickListener { loadModes() }
-        statusText.setText(R.string.mode_loading)
-        loadModes()
-    }
 
-    private fun loadModes() {
-        retryButton.visibility = View.GONE
-        modeList.removeAllViews()
-        statusText.visibility = View.VISIBLE
+        val container = findViewById<LinearLayout>(R.id.mode_container)
+        val statusText = findViewById<TextView>(R.id.mode_status)
+        val isAdminText = findViewById<TextView>(R.id.mode_is_admin)
+        val adminButton = findViewById<Button>(R.id.mode_admin)
+
         statusText.setText(R.string.mode_loading)
         lifecycleScope.launch {
             runCatching { accountRepository.loadSavedAccount() }
                 .onSuccess { result ->
-                    if (result == null || result.availableModes.isEmpty()) {
-                        statusText.setText(R.string.mode_empty)
-                        retryButton.visibility = View.VISIBLE
-                    } else {
-                        statusText.visibility = View.GONE
-                        selectedModeId = result.profile.selectedScenarioId
-                        result.availableModes.forEach(::addMode)
-                        result.profile.selectedScenarioName?.let {
-                            statusText.visibility = View.VISIBLE
-                            statusText.text = getString(R.string.mode_current, it)
+                    if (result !is AuthResult.Authenticated) {
+                        statusText.setText(R.string.mode_auth_required)
+                        return@onSuccess
+                    }
+                    val profile = result.profile
+                    val modes = result.availableModes
+                    if (profile.role == "admin") {
+                        isAdminText.visibility = View.VISIBLE
+                        adminButton.visibility = View.VISIBLE
+                        adminButton.setOnClickListener {
+                            startActivity(Intent(this@ModeSelectionActivity, AdminDashboardActivity::class.java))
                         }
                     }
+                    container.removeAllViews()
+                    if (modes.isEmpty()) {
+                        statusText.setText(R.string.mode_empty)
+                    } else {
+                        statusText.text = getString(R.string.mode_count, modes.size)
+                        modes.forEach { mode -> addModeButton(container, mode) }
+                    }
                 }
-                .onFailure {
-                    statusText.text = it.message ?: getString(R.string.auth_generic_error)
-                    retryButton.visibility = View.VISIBLE
-                }
+                .onFailure { statusText.text = it.message ?: getString(R.string.auth_generic_error) }
         }
     }
 
-    private fun addMode(mode: ScenarioMode) {
-        val button = Button(this).apply {
-            text = if (mode.id == selectedModeId) {
-                getString(R.string.mode_selected, mode.name)
-            } else {
-                mode.name
+    private fun addModeButton(container: LinearLayout, mode: ScenarioMode) {
+        container.addView(Button(this).apply {
+            text = getString(R.string.mode_button, mode.name, mode.version)
+            setOnClickListener {
+                lifecycleScope.launch {
+                    accountRepository.selectScenario(mode.id, mode.name)
+                    startActivity(Intent(this@ModeSelectionActivity, AutopilotHomeActivity::class.java))
+                    finish()
+                }
             }
-            contentDescription = mode.description ?: mode.name
-            setOnClickListener { selectMode(this, mode) }
-        }
-        modeList.addView(button)
-    }
-
-    private fun selectMode(button: Button, mode: ScenarioMode) {
-        setModeButtonsEnabled(false)
-        statusText.visibility = View.VISIBLE
-        statusText.setText(R.string.mode_loading)
-        lifecycleScope.launch {
-            runCatching {
-                // Install first so a failed or malformed remote payload never
-                // becomes the user's selected server-side mode.
-                RemoteModeInstaller(dumbRepository).install(mode)
-                accountRepository.selectMode(mode)
-            }
-                .onSuccess {
-                    selectedModeId = mode.id
-                    Toast.makeText(
-                        this@ModeSelectionActivity,
-                        getString(R.string.mode_switched, mode.name),
-                        Toast.LENGTH_SHORT,
-                    ).show()
-                    openClicker()
-                }
-                .onFailure {
-                    setModeButtonsEnabled(true)
-                    statusText.visibility = View.VISIBLE
-                    statusText.text = it.message ?: getString(R.string.mode_save_error)
-                }
-        }
-    }
-
-    private fun setModeButtonsEnabled(enabled: Boolean) {
-        for (index in 0 until modeList.childCount) {
-            modeList.getChildAt(index).isEnabled = enabled
-        }
-    }
-
-    private fun openClicker() {
-        startActivity(Intent(this, AutopilotHomeActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         })
-        finish()
     }
 }
