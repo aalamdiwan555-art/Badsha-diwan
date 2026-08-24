@@ -31,7 +31,7 @@ router.post("/admin/scenarios", async (req, res) => {
     adminId,
     name: name.trim(),
     description: description ?? null,
-    scenarioData: JSON.stringify(scenarioData),
+    scenarioData,
     isGlobal: Boolean(isGlobal),
   }).returning();
   res.status(201).json(created[0]);
@@ -41,7 +41,7 @@ router.patch("/admin/scenarios/:id", async (req, res) => {
   const updated = await db.update(scenariosTable).set({
     ...(typeof req.body.name === "string" ? { name: req.body.name.trim() } : {}),
     ...(req.body.description !== undefined ? { description: req.body.description } : {}),
-    ...(req.body.scenarioData !== undefined ? { scenarioData: JSON.stringify(req.body.scenarioData) } : {}),
+    ...(req.body.scenarioData !== undefined ? { scenarioData: req.body.scenarioData } : {}),
     ...(req.body.isActive !== undefined ? { isActive: Boolean(req.body.isActive) } : {}),
     updatedAt: new Date(),
   }).where(eq(scenariosTable.id, req.params.id)).returning();
