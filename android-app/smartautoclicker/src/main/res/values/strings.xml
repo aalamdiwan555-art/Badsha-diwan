@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
     <resources>
+      <string name="app_name">Autopilot</string>
       <string name="accessibility_service_description">Autopilot accessibility service for automated clicking</string>
     </resources>
     
