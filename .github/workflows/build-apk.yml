@@ -26,11 +26,11 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
           cache: gradle
 
       - name: Set up Android SDK
@@ -42,7 +42,12 @@ jobs:
       - name: Build APK
         run: ./gradlew :smartautoclicker:assembleF_DroidDebug --no-daemon --stacktrace
 
-      - name: Upload APK
+      - name: Find generated APK
+        run: |
+          echo "Generated APK files:"
+          find smartautoclicker/build/outputs/apk -type f -name "*.apk" -print
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: badsha-fdroid-debug-apk
