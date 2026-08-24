@@ -49,4 +49,47 @@
     <string name="admin_edit_mode">Edit %1$s</string>
     <string name="admin_save">Save</string>
     <string name="admin_mode_updated">Mode updated.</string>
+    <string name="welcome_title">Welcome</string>
+    <string name="welcome_subtitle">Sign in to continue to your automation workspace.</string>
+    <string name="email_hint">Email address</string>
+    <string name="password_hint">Password</string>
+    <string name="sign_in">Sign in</string>
+    <string name="switch_to_sign_up">Create an account</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="auth_fields_required">Enter your email and password.</string>
+    <string name="auth_weak_password">Use a password with at least 6 characters.</string>
+    <string name="auth_check_email">Check your email to complete registration.</string>
+    <string name="auth_enter_email">Enter your email address first.</string>
+    <string name="auth_reset_sent">Password reset instructions sent.</string>
+    <string name="auth_generic_error">Something went wrong. Please try again.</string>
+    <string name="mode_title">Choose a mode</string>
+    <string name="mode_subtitle">Select an automation mode to continue.</string>
+    <string name="mode_loading">Loading modes...</string>
+    <string name="mode_auth_required">Please sign in to view modes.</string>
+    <string name="mode_empty">No modes are available yet.</string>
+    <string name="mode_retry">Retry</string>
+    <string name="mode_count">Available modes: %1$d</string>
+    <string name="mode_button">%1$s (v%2$d)</string>
+    <string name="home_title">Autopilot</string>
+    <string name="home_mode_label">Selected mode</string>
+    <string name="home_no_mode">No mode selected</string>
+    <string name="home_subscription_label">Subscription</string>
+    <string name="home_reward_ad">Watch a reward ad</string>
+    <string name="home_start">Start</string>
+    <string name="home_stop">Stop</string>
+    <string name="home_switch_mode">Switch mode</string>
+    <string name="home_profile">Profile</string>
+    <string name="home_auth_required">Please sign in to continue.</string>
+    <string name="home_status">Signed in as %1$s
+Subscription: %2$s
+Mode: %3$s</string>
+    <string name="profile_title">Profile</string>
+    <string name="profile_email_label">Email</string>
+    <string name="profile_access_label">Access</string>
+    <string name="profile_logout">Sign out</string>
+    <string name="profile_auth_required">Please sign in to view your profile.</string>
+    <string name="profile_banned"> (banned)</string>
+    <string name="profile_info">Email: %1$s
+Role: %2$s
+Subscription: %3$s%4$s</string>
 </resources>
