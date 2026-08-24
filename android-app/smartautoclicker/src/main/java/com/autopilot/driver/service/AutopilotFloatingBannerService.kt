@@ -6,19 +6,28 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
 import android.view.WindowManager
-import android.widget.TextView
-import com.autopilot.driver.home.AutopilotHomeActivity
 import androidx.core.app.NotificationCompat
+import com.autopilot.driver.R
+import com.autopilot.driver.home.AutopilotHomeActivity
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class AutopilotFloatingBannerService : Service() {
+
+    companion object {
+        const val CHANNEL_ID = "autopilot_floating_banner"
+        const val NOTIFICATION_ID = 1001
+    }
+
     private var windowManager: WindowManager? = null
-    private var floatingView: TextView? = null
+    private var floatingView: View? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -34,11 +43,7 @@ class AutopilotFloatingBannerService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        floatingView?.let { view ->
-            runCatching { windowManager?.removeView(view) }
-        }
-        floatingView = null
-        windowManager = null
+        removeFloatingBanner()
         super.onDestroy()
     }
 
@@ -46,24 +51,23 @@ class AutopilotFloatingBannerService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Autopilot floating banner",
-                NotificationManager.IMPORTANCE_LOW,
+                "Autopilot Floating Banner",
+                NotificationManager.IMPORTANCE_LOW
             )
-            getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
+            val manager = getSystemService(NotificationManager::class.java)
+            manager?.createNotificationChannel(channel)
         }
     }
 
     private fun buildNotification(): Notification {
         val intent = Intent(this, AutopilotHomeActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Autopilot running")
-            .setContentText("Floating status is active")
+            .setContentTitle("Autopilot Running")
+            .setContentText("Floating banner is active")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
@@ -72,34 +76,29 @@ class AutopilotFloatingBannerService : Service() {
 
     private fun showFloatingBanner() {
         if (floatingView != null) return
-        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-        } else {
-            WindowManager.LayoutParams.TYPE_PHONE
-        }
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            type,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            else
+                WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT,
+            PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = 16
+            x = 0
             y = 100
         }
-        floatingView = TextView(this).apply {
-            text = "Autopilot"
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.BLACK)
-            setPadding(24, 12, 24, 12)
-        }
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_banner, null)
         windowManager?.addView(floatingView, params)
     }
 
-    companion object {
-        private const val CHANNEL_ID = "autopilot_floating_banner"
-        private const val NOTIFICATION_ID = 1001
+    private fun removeFloatingBanner() {
+        floatingView?.let {
+            windowManager?.removeView(it)
+            floatingView = null
+        }
     }
 }
