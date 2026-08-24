@@ -1,6 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <resources>
-      <string name="app_name">Autopilot</string>
-      <string name="accessibility_service_description">Autopilot accessibility service for automated clicking</string>
-    </resources>
-    
+<resources>
+    <string name="app_name">Autopilot</string>
+    <string name="accessibility_service_description">Autopilot accessibility service for automated clicking</string>
+    <string name="admin_title">Admin dashboard</string>
+    <string name="admin_mode_name_hint">Mode name</string>
+    <string name="admin_mode_description_hint">Description</string>
+    <string name="admin_scenario_json_create_hint">Scenario JSON</string>
+    <string name="admin_scenario_json_hint">Scenario JSON</string>
+    <string name="admin_create_mode">Create mode</string>
+    <string name="admin_settings_title">App settings</string>
+    <string name="admin_interstitial_interval_hint">Interstitial interval (minutes)</string>
+    <string name="admin_reward_ads_hint">Reward ads per day</string>
+    <string name="admin_trial_days_hint">Trial days</string>
+    <string name="admin_save_settings">Save settings</string>
+    <string name="admin_users_title">Users</string>
+    <string name="admin_refresh">Refresh</string>
+    <string name="admin_name_required">Enter a mode name.</string>
+    <string name="admin_invalid_scenario">Enter valid scenario JSON.</string>
+    <string name="admin_access_required">Admin access is required.</string>
+    <string name="admin_mode_limit">The mode limit has been reached.</string>
+    <string name="admin_mode_created">Mode created.</string>
+    <string name="admin_loading">Loading dashboard...</string>
+    <string name="admin_mode_count">Modes available: %1$d</string>
+    <string name="admin_mode_item">%1$s (v%2$d)</string>
+    <string name="admin_edit">Edit</string>
+    <string name="admin_delete">Delete</string>
+    <string name="admin_read_only_status">Dashboard loaded.</string>
+    <string name="admin_users_load_error">Unable to load users.</string>
+    <string name="admin_invalid_settings">Enter valid settings values.</string>
+    <string name="admin_settings_saved">Settings saved.</string>
+    <string name="admin_user_item">%1$s - %2$s</string>
+    <string name="admin_grant">Grant subscription</string>
+    <string name="admin_remove_ad_free">Remove ad-free access</string>
+    <string name="admin_make_ad_free">Make ad-free</string>
+    <string name="admin_ban">Ban</string>
+    <string name="admin_unban">Unban</string>
+    <string name="admin_ban_reason_hint">Reason (optional)</string>
+    <string name="admin_ban_title">Ban %1$s?</string>
+    <string name="admin_ban_success">User banned.</string>
+    <string name="admin_unban_success">User unbanned.</string>
+    <string name="admin_grant_title">Grant subscription to %1$s</string>
+    <string name="admin_invalid_duration">Enter a duration from 1 to 3650 days.</string>
+    <string name="admin_grant_success">Subscription granted.</string>
+    <string name="admin_ad_free_success">Ad-free access updated.</string>
+    <string name="admin_delete_mode_title">Delete %1$s?</string>
+    <string name="admin_delete_mode_message">This mode and its scenario data will be deleted.</string>
+    <string name="admin_mode_deleted">Mode deleted: %1$s</string>
+    <string name="admin_edit_mode">Edit %1$s</string>
+    <string name="admin_save">Save</string>
+    <string name="admin_mode_updated">Mode updated.</string>
+</resources>
